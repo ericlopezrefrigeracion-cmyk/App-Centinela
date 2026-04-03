@@ -13,7 +13,7 @@ const C = Colors.centinela;
 // ─────────────────────────────────────────────────────
 //  Tipos
 // ─────────────────────────────────────────────────────
-type EstadoEquipo = 'normal' | 'alerta' | 'critico' | 'desconectado';
+type EstadoEquipo = 'normal' | 'atencion' | 'critico' | 'desconectado';
 type NivelSenal  = 'buena' | 'normal' | 'baja';
 
 interface Equipo {
@@ -31,11 +31,21 @@ interface Equipo {
 function colorEstado(estado: EstadoEquipo): string {
   const mapa: Record<EstadoEquipo, string> = {
     normal:       C.normal,
-    alerta:       C.alerta,
+    atencion:     C.alerta,
     critico:      C.critico,
     desconectado: C.desconectado,
   };
   return mapa[estado] ?? C.desconectado;
+}
+
+function labelEstado(estado: EstadoEquipo): string {
+  const mapa: Record<EstadoEquipo, string> = {
+    normal:       'NORMAL',
+    atencion:     'ATENCIÓN',
+    critico:      'CRÍTICO',
+    desconectado: 'DESCONECTADO',
+  };
+  return mapa[estado] ?? 'SIN DATOS';
 }
 
 function infoSenal(senal: NivelSenal) {
@@ -53,6 +63,7 @@ function infoSenal(senal: NivelSenal) {
 function EquipoCard({ equipo }: { equipo: Equipo }) {
   const col    = colorEstado(equipo.estado);
   const senal  = infoSenal(equipo.senal);
+  const label  = labelEstado(equipo.estado);
 
   return (
     <View style={[styles.card, { borderLeftColor: col }]}>
@@ -65,7 +76,7 @@ function EquipoCard({ equipo }: { equipo: Equipo }) {
         </View>
         <View style={[styles.estadoBadge, { backgroundColor: col + '22', borderColor: col }]}>
           <Text style={[styles.estadoText, { color: col }]}>
-            {equipo.estado?.toUpperCase() ?? 'SIN DATOS'}
+            {label}
           </Text>
         </View>
       </View>
@@ -140,14 +151,16 @@ export default function HomeScreen() {
               : e.rssi > -60 ? 'buena'
               : e.rssi > -75 ? 'normal'
               : 'baja',
-        // Mapear estado de la API al estado visual
-        estado: e.estado === 'vinculado' && e.ultimaConexion
-          ? (() => {
-              const mins = (Date.now() - new Date(e.ultimaConexion).getTime()) / 60000;
-              return mins > 15 ? 'desconectado' : 'normal';
-            })()
-          : e.estado === 'vinculado' ? 'normal'
-          : 'desconectado',
+        // Usar estado_temp de la API; si está desconectado tiene prioridad
+        estado: (() => {
+          if (e.ultimaConexion) {
+            const mins = (Date.now() - new Date(e.ultimaConexion).getTime()) / 60000;
+            if (mins > 15) return 'desconectado';
+          } else {
+            return 'desconectado';
+          }
+          return (e.estado_temp ?? 'normal') as EstadoEquipo;
+        })(),
       })));
     } catch (err) {
       setError('No se pudieron cargar los equipos. Revisá tu conexión.');
