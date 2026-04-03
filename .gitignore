@@ -43,5 +43,4 @@ app-example
 /android
 
 # Firebase — claves sensibles
-google-services.json
 GoogleService-Info.plist
