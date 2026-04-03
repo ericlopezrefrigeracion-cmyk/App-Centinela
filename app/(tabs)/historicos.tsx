@@ -158,15 +158,11 @@ export default function HistoricosScreen() {
         <polyline points="${polyline}"
           fill="none" stroke="#7ed321" stroke-width="2" stroke-linejoin="round"/>
 
-        <!-- Puntos con valor de temperatura -->
+        <!-- Puntos de temperatura -->
         ${datos.map((d, i) => {
           const px = x(i).toFixed(1);
-          const py = y(Number(d.temp));
-          const labelY = py < padT + 20 ? (py + 18).toFixed(1) : (py - 6).toFixed(1);
-          return `
-            <circle cx="${px}" cy="${py.toFixed(1)}" r="3" fill="#7ed321"/>
-            <text x="${px}" y="${labelY}" text-anchor="middle" font-size="9" font-weight="bold" fill="#5a8a20">${Number(d.temp).toFixed(1)}°</text>
-          `;
+          const py = y(Number(d.temp)).toFixed(1);
+          return `<circle cx="${px}" cy="${py}" r="3" fill="#7ed321"/>`;
         }).join('')}
 
         ${etiquetas.map(e => `
@@ -208,9 +204,8 @@ export default function HistoricosScreen() {
       }
 
       // Obtener datos históricos por día Y datos recientes para agrupar por hora
-      // Cuando Carlos agregue agrupacion=hora, cambiar 'dia' por 'hora'
       const [historicoData, alertasData] = await Promise.all([
-        datosService.getHistorico(equipoSeleccionado, desde, hastaFinal, 'dia'),
+        datosService.getHistorico(equipoSeleccionado, desde, hastaFinal, 'hora'),
         alertaService.getAlertas({ soloNoLeidas: false, limit: 200 }),
       ]);
 

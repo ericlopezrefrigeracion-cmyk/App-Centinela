@@ -2,7 +2,7 @@
   "expo": {
     "name": "Centinela",
     "slug": "Centinela",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "centinela",
@@ -25,7 +25,8 @@
         "android.permission.VIBRATE",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "package": "com.telemetiot.Centinela"
+      "package": "com.telemetiot.Centinela",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",

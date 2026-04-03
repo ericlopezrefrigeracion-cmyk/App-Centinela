@@ -6,6 +6,7 @@ import { ActivityIndicator, View } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 // Colores con fallback directo para evitar errores en la carga inicial
@@ -89,8 +90,10 @@ function RootLayoutNav() {
 // ─── Layout raíz — envuelve todo en AuthProvider ─────
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

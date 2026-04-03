@@ -1,23 +1,46 @@
 // ─────────────────────────────────────────────────────
 //  services/services.js — API REAL
-//  Conectado a https://telemet.144.217.82.140.nip.io
+//  Conectado a https://api.telemet.com.ar
 // ─────────────────────────────────────────────────────
-import api from './api';
+import axios from 'axios';
+import api, { BASE_URL } from './api';
 
 // ── AUTH ──────────────────────────────────────────────
 export const authService = {
 
   login: async (mail, password) => {
     const res = await api.post('/auth/login', { mail, password });
-    // Responde: { token: { access_token, token_type }, sub, tipo, nombre }
+    // Responde: { token: { access_token, refresh_token, token_type }, sub, tipo, nombre }
     return {
-      token:   res.data.token.access_token,
+      accessToken:  res.data.token.access_token,
+      refreshToken: res.data.token.refresh_token,
       usuario: {
         mail:   res.data.sub,
         nombre: res.data.nombre,
         tipo:   res.data.tipo,
       },
     };
+  },
+
+  refresh: async (refreshToken) => {
+    // Usar axios directamente para no gatillar el interceptor de api.js
+    const res = await axios.post(`${BASE_URL}/auth/refresh`, { refresh_token: refreshToken });
+    return {
+      accessToken:  res.data.token.access_token,
+      refreshToken: res.data.token.refresh_token,
+    };
+  },
+
+  cerrarSesion: async (refreshToken) => {
+    try {
+      await api.post('/auth/logout', { refresh_token: refreshToken });
+    } catch {
+      // Si falla el logout en el servidor igual limpiamos localmente
+    }
+  },
+
+  recuperarPassword: async (email) => {
+    await api.post('/auth/recuperar', { email });
   },
 
   registro: async ({ mail, nombre, apellido, password, cuit, telefono }) => {
@@ -44,8 +67,8 @@ export const authService = {
     return res.data;
   },
 
-  registrarFcmToken: async (token) => {
-    await api.post('/app/perfil/fcm-token', { token, plataforma: 'android' });
+  registrarFcmToken: async (token, plataforma) => {
+    await api.post('/app/perfil/fcm-token', { token, plataforma });
   },
 
   eliminarFcmToken: async (token) => {
@@ -91,7 +114,7 @@ export const equipoService = {
   },
 
   editarParametros: async (id, datos) => {
-    // datos: { minima, maxima, calibracion, set_point, retardo }
+    // datos: { minima, maxima, calibracion, set_point, retardo, alertas_cliente, resumen_semanal }
     const res = await api.patch(`/app/equipos/${id}/parametros`, datos);
     return res.data;
   },

@@ -66,7 +66,7 @@ export default function ConfigurarEquipoScreen() {
         calibracion:       String(data.calibracion ?? ''),
         retardo:           String(data.retardo    ?? ''),
         alertasActivas:    data.alertas_cliente   ?? data.alertasActivas ?? true,
-        reportesSemanales: false,
+        reportesSemanales: data.resumen_semanal     ?? false,
       });
     } catch {
       Alert.alert('Error', 'No se pudo cargar la configuración del equipo.');
@@ -82,14 +82,66 @@ export default function ConfigurarEquipoScreen() {
 
   function validar(): boolean {
     const nuevos: Record<string, string> = {};
-    if (!form.nombre.trim()) nuevos.nombre = 'El nombre es requerido';
-    if (form.minima && isNaN(Number(form.minima))) nuevos.minima = 'Debe ser un número';
-    if (form.maxima && isNaN(Number(form.maxima))) nuevos.maxima = 'Debe ser un número';
-    if (form.minima && form.maxima && Number(form.minima) >= Number(form.maxima)) {
-      nuevos.maxima = 'La máxima debe ser mayor que la mínima';
+
+    // Nombre
+    if (!form.nombre.trim())
+      nuevos.nombre = 'El nombre es requerido';
+    else if (form.nombre.trim().length > 30)
+      nuevos.nombre = 'Máximo 30 caracteres';
+
+    // Descripción
+    if (form.descripcion.length > 50)
+      nuevos.descripcion = 'Máximo 50 caracteres';
+
+    // Ubicación
+    if (form.ubicacion.length > 40)
+      nuevos.ubicacion = 'Máximo 40 caracteres';
+
+    // Mínima
+    if (!form.minima.trim())
+      nuevos.minima = 'La temperatura mínima es requerida';
+    else if (isNaN(Number(form.minima)))
+      nuevos.minima = 'Debe ser un número';
+    else if (Number(form.minima) < -50 || Number(form.minima) > 100)
+      nuevos.minima = 'Debe estar entre -50 y +100°C';
+
+    // Máxima
+    if (!form.maxima.trim())
+      nuevos.maxima = 'La temperatura máxima es requerida';
+    else if (isNaN(Number(form.maxima)))
+      nuevos.maxima = 'Debe ser un número';
+    else if (Number(form.maxima) < -50 || Number(form.maxima) > 100)
+      nuevos.maxima = 'Debe estar entre -50 y +100°C';
+    else if (form.minima && !nuevos.minima && Number(form.maxima) <= Number(form.minima))
+      nuevos.maxima = 'Debe ser mayor que la mínima';
+
+    // Temperatura deseada (setpoint)
+    if (!form.setpoint.trim())
+      nuevos.setpoint = 'La temperatura deseada es requerida';
+    else if (isNaN(Number(form.setpoint)))
+      nuevos.setpoint = 'Debe ser un número';
+    else if (form.minima && form.maxima && !nuevos.minima && !nuevos.maxima) {
+      if (Number(form.setpoint) < Number(form.minima) || Number(form.setpoint) > Number(form.maxima))
+        nuevos.setpoint = `Debe estar entre ${form.minima} y ${form.maxima}°C`;
     }
-    if (form.calibracion && isNaN(Number(form.calibracion))) nuevos.calibracion = 'Debe ser un número';
-    if (form.retardo && isNaN(Number(form.retardo))) nuevos.retardo = 'Debe ser un número';
+
+    // Calibración
+    if (form.calibracion.trim()) {
+      if (isNaN(Number(form.calibracion)))
+        nuevos.calibracion = 'Debe ser un número';
+      else if (Number(form.calibracion) < -5 || Number(form.calibracion) > 5)
+        nuevos.calibracion = 'Debe estar entre -5 y +5';
+    }
+
+    // Retardo
+    if (form.retardo.trim()) {
+      const r = Number(form.retardo);
+      if (isNaN(r) || !Number.isInteger(r))
+        nuevos.retardo = 'Debe ser un número entero';
+      else if (r < 5 || r > 180)
+        nuevos.retardo = 'Debe estar entre 5 y 180 minutos';
+    }
+
     setErrores(nuevos);
     return Object.keys(nuevos).length === 0;
   }
@@ -106,11 +158,13 @@ export default function ConfigurarEquipoScreen() {
       });
       // Guardar parámetros técnicos
       await equipoService.editarParametros(id, {
-        minima:      form.minima      ? Number(form.minima)      : undefined,
-        maxima:      form.maxima      ? Number(form.maxima)      : undefined,
-        set_point:   form.setpoint    ? Number(form.setpoint)    : undefined,
-        calibracion: form.calibracion ? Number(form.calibracion) : undefined,
-        retardo:     form.retardo     ? Number(form.retardo)     : undefined,
+        minima:          Number(form.minima),
+        maxima:          Number(form.maxima),
+        set_point:       Number(form.setpoint),
+        calibracion:     form.calibracion.trim() ? Number(form.calibracion) : 0,
+        retardo:         form.retardo.trim()      ? Number(form.retardo)     : 5,
+        alertas_cliente: form.alertasActivas,
+        resumen_semanal: form.reportesSemanales,
       });
       Alert.alert(
         'Guardado',
@@ -172,6 +226,7 @@ export default function ConfigurarEquipoScreen() {
             style={[styles.input, errores.nombre ? styles.inputError : null]}
             value={form.nombre}
             onChangeText={t => setField('nombre', t)}
+            maxLength={30}
             placeholder="Nombre del equipo"
             placeholderTextColor={C.textMuted}
           />
@@ -183,14 +238,16 @@ export default function ConfigurarEquipoScreen() {
         <View style={styles.campo}>
           <Text style={styles.label}>Descripción</Text>
           <TextInput
-            style={[styles.input, styles.inputMultiline]}
+            style={[styles.input, styles.inputMultiline, errores.descripcion ? styles.inputError : null]}
             value={form.descripcion}
             onChangeText={t => setField('descripcion', t)}
             placeholder="Descripción opcional"
             placeholderTextColor={C.textMuted}
             multiline
             numberOfLines={2}
+            maxLength={50}
           />
+          {errores.descripcion && <Text style={styles.errorText}>{errores.descripcion}</Text>}
         </View>
 
         <View style={styles.separador} />
@@ -198,12 +255,14 @@ export default function ConfigurarEquipoScreen() {
         <View style={styles.campo}>
           <Text style={styles.label}>Ubicación</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, errores.ubicacion ? styles.inputError : null]}
             value={form.ubicacion}
             onChangeText={t => setField('ubicacion', t)}
             placeholder="Ubicación del equipo"
             placeholderTextColor={C.textMuted}
+            maxLength={40}
           />
+          {errores.ubicacion && <Text style={styles.errorText}>{errores.ubicacion}</Text>}
         </View>
       </View>
 
@@ -247,13 +306,14 @@ export default function ConfigurarEquipoScreen() {
           <Text style={styles.label}>Temperatura deseada / Setpoint (°C)</Text>
           <Text style={styles.labelSub}>Temperatura objetivo de trabajo</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, errores.setpoint ? styles.inputError : null]}
             value={form.setpoint}
             onChangeText={t => setField('setpoint', t)}
             placeholder="-18"
             placeholderTextColor={C.textMuted}
             keyboardType="numeric"
           />
+          {errores.setpoint && <Text style={styles.errorText}>{errores.setpoint}</Text>}
         </View>
 
         <View style={styles.separador} />

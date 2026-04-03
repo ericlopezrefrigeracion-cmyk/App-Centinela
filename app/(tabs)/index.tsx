@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, RefreshControl, ActivityIndicator, Alert
+  StyleSheet, RefreshControl, ActivityIndicator, Alert, AppState
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
@@ -160,10 +160,36 @@ export default function HomeScreen() {
   // Carga inicial
   useEffect(() => { cargarEquipos(); }, []);
 
-  // Auto-refresh cada 60 segundos
+  // Auto-refresh cada 60 segundos, pausado cuando la app está en background
   useEffect(() => {
-    const intervalo = setInterval(() => cargarEquipos(true), 60000);
-    return () => clearInterval(intervalo);
+    let intervalo: ReturnType<typeof setInterval> | null = null;
+
+    function iniciarIntervalo() {
+      intervalo = setInterval(() => cargarEquipos(true), 60000);
+    }
+
+    function detenerIntervalo() {
+      if (intervalo) {
+        clearInterval(intervalo);
+        intervalo = null;
+      }
+    }
+
+    iniciarIntervalo();
+
+    const suscripcion = AppState.addEventListener('change', (estado) => {
+      if (estado === 'active') {
+        cargarEquipos(true);
+        iniciarIntervalo();
+      } else {
+        detenerIntervalo();
+      }
+    });
+
+    return () => {
+      detenerIntervalo();
+      suscripcion.remove();
+    };
   }, []);
 
   function handleLogout() {

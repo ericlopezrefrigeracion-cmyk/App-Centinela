@@ -1,12 +1,22 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Alert, Switch, Linking
+  StyleSheet, ActivityIndicator, Alert, Switch, Linking, Platform
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
 import { Colors, FontSizes, FontWeights, Spacing, Radius } from '@/constants/theme';
 import { authService } from '@/services/services';
 import { useAuth } from '@/context/AuthContext';
+
+// Configurar comportamiento de notificaciones
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge:  true,
+  }),
+});
 
 const C = Colors?.centinela ?? {
   background:    '#0d1117',
@@ -37,16 +47,19 @@ export default function PerfilScreen() {
   const [usuario, setUsuario]   = useState<any>(null);
   const [cargando, setCargando] = useState(true);
   const [notifActivas, setNotifActivas] = useState(false);
+  const [permisoEstado, setPermisoEstado] = useState('undetermined');
 
   useEffect(() => {
     cargarPerfil();
-    cargarPreferencias();
+    verificarPermisos();
   }, []);
 
-  async function cargarPreferencias() {
+  async function verificarPermisos() {
     try {
-      const n = await AsyncStorage.getItem('centinela_notif');
-      if (n) setNotifActivas(n === 'true');
+      const { status } = await Notifications.getPermissionsAsync();
+      setPermisoEstado(status);
+      const guardado = await AsyncStorage.getItem('centinela_notif');
+      setNotifActivas(status === 'granted' && guardado === 'true');
     } catch {}
   }
 
@@ -67,19 +80,63 @@ export default function PerfilScreen() {
     }
   }
 
-  async function handleLogout() {
-    Alert.alert('Cerrar sesión', '¿Estás seguro?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Cerrar sesión', style: 'destructive', onPress: logout },
-    ]);
+  async function registrarTokenFCM() {
+    try {
+      const tokenData = await Notifications.getDevicePushTokenAsync();
+      const fcmToken = tokenData.data;
+      const plataforma = Platform.OS === 'ios' ? 'ios' : 'android';
+      await authService.registrarFcmToken(fcmToken, plataforma);
+      await AsyncStorage.setItem('centinela_fcm_token', fcmToken);
+    } catch (e) {
+      console.log('Error registrando FCM token:', e);
+    }
   }
 
   async function toggleNotif(val: boolean) {
-    setNotifActivas(val);
-    await AsyncStorage.setItem('centinela_notif', val ? 'true' : 'false');
     if (val) {
-      Alert.alert('Notificaciones', 'Activadas. Funcionan completamente en el build de producción.');
+      // Solicitar permiso
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permiso denegado',
+          'Para recibir alertas, habilitá las notificaciones en la configuración del sistema.'
+        );
+        return;
+      }
+      setPermisoEstado(status);
+      setNotifActivas(true);
+      await AsyncStorage.setItem('centinela_notif', 'true');
+      await registrarTokenFCM();
+      Alert.alert('Notificaciones activadas', 'Vas a recibir alertas cuando la temperatura salga de rango.');
+    } else {
+      setNotifActivas(false);
+      await AsyncStorage.setItem('centinela_notif', 'false');
+      // Eliminar token del servidor
+      try {
+        const token = await AsyncStorage.getItem('centinela_fcm_token');
+        if (token) {
+          await authService.eliminarFcmToken(token);
+          await AsyncStorage.removeItem('centinela_fcm_token');
+        }
+      } catch {}
     }
+  }
+
+  async function handleLogout() {
+    Alert.alert('Cerrar sesión', '¿Estás seguro?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Cerrar sesión', style: 'destructive', onPress: async () => {
+        // Eliminar token FCM al cerrar sesión
+        try {
+          const token = await AsyncStorage.getItem('centinela_fcm_token');
+          if (token) {
+            await authService.eliminarFcmToken(token);
+            await AsyncStorage.removeItem('centinela_fcm_token');
+          }
+        } catch {}
+        logout();
+      }},
+    ]);
   }
 
   if (cargando) {
@@ -115,20 +172,23 @@ export default function PerfilScreen() {
 
       {/* Notificaciones */}
       <View style={styles.seccion}>
-        <Text style={styles.seccionTitulo}>Notificaciones</Text>
+        <Text style={styles.seccionTitulo}>Notificaciones push</Text>
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Notificaciones push</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.switchLabel}>Recibir alertas de temperatura</Text>
+            <Text style={styles.switchSub}>
+              {permisoEstado === 'granted'
+                ? notifActivas ? 'Activas — recibirás alertas al instante' : 'Permiso otorgado pero desactivadas'
+                : 'Se solicitará permiso al activar'}
+            </Text>
+          </View>
           <Switch
             value={notifActivas}
             onValueChange={toggleNotif}
-            trackColor={{ false: C.border, true: C.primaryBg }}
-            thumbColor={notifActivas ? C.primary : '#ccc'}
+            trackColor={{ false: C.border, true: 'rgba(126,211,33,0.4)' }}
+            thumbColor={notifActivas ? C.primary : '#666'}
           />
         </View>
-        <Text style={styles.notifNote}>
-          Las notificaciones push funcionan completamente en el build de producción instalado desde la APK.
-        </Text>
-
       </View>
 
       {/* Soporte */}
@@ -165,16 +225,15 @@ const styles = StyleSheet.create({
   email:      { fontSize: FontSizes.sm, color: C.textSub },
 
   seccion:       { backgroundColor: C.card, borderRadius: Radius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md, marginBottom: Spacing.lg },
-  seccionTitulo: { fontSize: FontSizes.xs, textTransform: 'uppercase', letterSpacing: 0.8, color: C.textMuted, fontWeight: FontWeights.bold, marginBottom: Spacing.sm, marginTop: Spacing.sm },
+  seccionTitulo: { fontSize: FontSizes.xs, textTransform: 'uppercase', letterSpacing: 0.8, color: C.textMuted, fontWeight: FontWeights.bold, marginBottom: Spacing.sm },
 
   filaDato:  { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border },
   filaLabel: { fontSize: FontSizes.sm, color: C.textSub },
   filaValor: { fontSize: FontSizes.sm, color: C.text, fontWeight: FontWeights.medium },
 
-  switchRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
-  switchLabel: { fontSize: FontSizes.sm, color: C.text },
-  notifNote:   { fontSize: FontSizes.xs, color: C.textMuted, marginTop: 4, marginBottom: 8, lineHeight: 16 },
-
+  switchRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, gap: 12 },
+  switchLabel: { fontSize: FontSizes.sm, color: C.text, marginBottom: 2 },
+  switchSub:   { fontSize: FontSizes.xs, color: C.textMuted },
 
   linkRow:  { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border },
   linkText: { fontSize: FontSizes.sm, color: C.primary },

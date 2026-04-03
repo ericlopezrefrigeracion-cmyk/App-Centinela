@@ -23,10 +23,26 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !error.config._retry) {
+      error.config._retry = true;
+      try {
+        const refreshToken = await SecureStore.getItemAsync('centinela_refresh_token');
+        if (refreshToken) {
+          // Usar axios directo para no gatillar este mismo interceptor
+          const res = await axios.post(`${BASE_URL}/auth/refresh`, { refresh_token: refreshToken });
+          const newAccessToken  = res.data.token.access_token;
+          const newRefreshToken = res.data.token.refresh_token;
+          await SecureStore.setItemAsync('centinela_token', newAccessToken);
+          await SecureStore.setItemAsync('centinela_refresh_token', newRefreshToken);
+          error.config.headers.Authorization = `Bearer ${newAccessToken}`;
+          return api(error.config);
+        }
+      } catch {
+        // Refresh falló — cerrar sesión
+      }
       await SecureStore.deleteItemAsync('centinela_token');
+      await SecureStore.deleteItemAsync('centinela_refresh_token');
       await SecureStore.deleteItemAsync('centinela_usuario');
-      // Cerrar sesión automáticamente
       if (typeof global !== 'undefined' && global._centinelaLogout) {
         global._centinelaLogout();
       }

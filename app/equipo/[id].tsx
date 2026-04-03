@@ -1,16 +1,12 @@
-import { Colors, FontSizes, FontWeights, Radius, Spacing } from '@/constants/theme';
-import { alertaService, datosService, equipoService } from '@/services/services';
-import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  ActivityIndicator, Alert, Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+  View, Text, ScrollView, TouchableOpacity,
+  StyleSheet, ActivityIndicator, Alert, Dimensions
 } from 'react-native';
+import { useLocalSearchParams, router } from 'expo-router';
 import { LineChart } from 'react-native-chart-kit';
+import { Colors, FontSizes, FontWeights, Spacing, Radius } from '@/constants/theme';
+import { datosService, alertaService, equipoService } from '@/services/services';
 
 const C = Colors?.centinela ?? {
   background:   '#0d1117',
@@ -99,14 +95,33 @@ export default function DatosEquipoScreen() {
       const equipoEncontrado = equipos.find((e: any) => e.id === id);
       if (equipoEncontrado) setEquipo(equipoEncontrado);
 
-      // Cargar datos recientes
-      const datosData = await datosService.getRecientes(id);
-      setDatos(datosData);
+      // Cargar datos recientes y reducir a 1 punto cada 5 minutos
+      const datosRaw = await datosService.getRecientes(id);
+      const hace24hs = Date.now() - 24 * 60 * 60 * 1000;
+      const datosFiltrados = datosRaw.filter((d: any) => new Date(d.fecha).getTime() >= hace24hs);
+      // Agrupar por intervalos de 5 minutos
+      const porIntervalo: Record<string, any[]> = {};
+      datosFiltrados.forEach((d: any) => {
+        const t = new Date(d.fecha).getTime();
+        const intervalo = Math.floor(t / (5 * 60 * 1000));
+        if (!porIntervalo[intervalo]) porIntervalo[intervalo] = [];
+        porIntervalo[intervalo].push(d);
+      });
+      const datosAgrupados = Object.values(porIntervalo)
+        .sort((a, b) => new Date(a[0].fecha).getTime() - new Date(b[0].fecha).getTime())
+        .map(grupo => ({
+          ...grupo[0],
+          temp: grupo.reduce((s: number, d: any) => s + Number(d.temp), 0) / grupo.length,
+        }));
+      setDatos(datosAgrupados);
 
-      // Cargar alertas no leídas del usuario
-      const alertasData = await alertaService.getAlertas({ soloNoLeidas: false, limit: 50 });
-      // Filtrar solo las del equipo actual
-      const alertasEquipo = alertasData.items.filter((a: any) => a.equipo_id === id);
+      // Cargar alertas de las últimas 24hs del equipo
+      const alertasData = await alertaService.getAlertas({ soloNoLeidas: false, limit: 100 });
+      const ahora: number = Date.now();
+      const hace24hsAlertas: number = ahora - 24 * 60 * 60 * 1000;
+      const alertasEquipo = alertasData.items.filter((a: any) =>
+        a.equipo_id === id && new Date(a.fecha).getTime() >= hace24hsAlertas
+      );
       setAlertas(alertasEquipo);
     } catch (e) {
       Alert.alert('Error', 'No se pudieron cargar los datos del equipo.');
@@ -286,7 +301,7 @@ export default function DatosEquipoScreen() {
         day: '2-digit', month: '2-digit', year: 'numeric'
       }).replace(/\//g, '-');
       const nombreEquipo = (equipo?.nombre ?? 'Equipo').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]/g, '').trim();
-      const nombreFinal = `Reporte de temperaturas - ${nombreEquipo} - ${fecha}.pdf`;
+      const nombreFinal = `Reporte de temperaturas-${nombreEquipo}-${fecha}.pdf`;
       const uriNombrado = FileSystem.documentDirectory + nombreFinal;
       await FileSystem.copyAsync({ from: uri, to: uriNombrado });
 
@@ -311,21 +326,16 @@ export default function DatosEquipoScreen() {
   }
 
   // ── Preparar datos para el gráfico ────────────────
-  // Tomamos hasta 24 puntos (1 por hora) para no saturar el gráfico
-  const puntos = datos.length > 24
-    ? datos.filter((_, i) => i % Math.ceil(datos.length / 24) === 0).slice(0, 24)
-    : datos;
+  // Usar todos los datos disponibles
+  const puntos = datos;
 
   const temperaturas = puntos.map(d => d.temp);
-  const etiquetas    = puntos
-    .filter((_, i) => i % Math.ceil(puntos.length / 6) === 0)
-    .map(d => formatHora(d.fecha));
 
-  // Aseguramos que etiquetas tenga la misma longitud que temperaturas
-  // llenando con strings vacíos donde no hay etiqueta
-  const etiquetasCompletas = puntos.map((d, i) =>
-    i % Math.ceil(puntos.length / 6) === 0 ? formatHora(d.fecha) : ''
-  );
+  // Mostrar solo 6 etiquetas distribuidas en el eje X
+  const etiquetasCompletas = puntos.map((d, i) => {
+    const step = Math.max(1, Math.ceil(puntos.length / 6));
+    return i % step === 0 ? formatHora(d.fecha) : '';
+  });
 
   const hayDatos = temperaturas.length > 0;
 
@@ -356,11 +366,12 @@ export default function DatosEquipoScreen() {
               data={{
                 labels: etiquetasCompletas,
                 datasets: [
-                  // Línea principal de temperatura
+                  // Línea principal de temperatura — sin puntos
                   {
                     data: temperaturas,
                     color: () => C.primary,
                     strokeWidth: 2,
+                    withDots: false,
                   },
                   // Línea de temperatura mínima
                   {
@@ -377,17 +388,17 @@ export default function DatosEquipoScreen() {
                     withDots: false,
                   },
                 ],
-                legend: ['Temperatura', 'Mín. permitida', 'Máx. permitida'],
               }}
               width={ANCHO - Spacing.lg * 2 - 2}
               height={200}
               chartConfig={{
-                backgroundColor:     C.card,
+                backgroundColor:        C.card,
                 backgroundGradientFrom: C.card,
                 backgroundGradientTo:   C.cardAlt,
                 decimalPlaces: 1,
                 color: (opacity = 1) => `rgba(126, 211, 33, ${opacity})`,
                 labelColor: () => C.textMuted,
+                paddingRight: 0,
                 style: { borderRadius: Radius.md },
                 propsForDots: {
                   r: '3',
@@ -407,8 +418,12 @@ export default function DatosEquipoScreen() {
               withHorizontalLabels
             />
 
-            {/* Leyenda manual de las líneas de referencia */}
+            {/* Leyenda manual */}
             <View style={styles.leyenda}>
+              <View style={styles.leyendaItem}>
+                <View style={[styles.leyendaLinea, { backgroundColor: C.primary }]} />
+                <Text style={styles.leyendaText}>Temperatura</Text>
+              </View>
               <View style={styles.leyendaItem}>
                 <View style={[styles.leyendaLinea, { backgroundColor: 'rgba(245,166,35,0.7)' }]} />
                 <Text style={styles.leyendaText}>Mín: {equipo?.minima}°C</Text>
@@ -546,7 +561,8 @@ const styles = StyleSheet.create({
 
   // Gráfico
   graficoContainer: {
-    padding: Spacing.sm,
+    paddingTop: Spacing.sm,
+    paddingBottom: 0,
   },
   grafico: {
     borderRadius: Radius.md,

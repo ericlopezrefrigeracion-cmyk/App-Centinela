@@ -31,12 +31,13 @@ const C = Colors?.centinela ?? {
 type TipoAlerta = 'temperatura' | 'desconexion' | 'reconexion';
 
 interface Alerta {
-  id:          number;
-  fecha:       string;
-  equipo:      string;  // nombre del equipo
-  tipo:        TipoAlerta;
+  id:        number;
+  equipo_id: string;
+  fecha:     string;
+  equipo:    string;  // nombre del equipo
+  tipo:      TipoAlerta;
   descripcion: string;
-  vista:       boolean;
+  vista:     boolean;
 }
 
 // ─────────────────────────────────────────────────────
@@ -163,7 +164,7 @@ export default function AlertasScreen() {
     }
   }
 
-  // Marcar todas como vistas
+  // Marcar todas como vistas (agrupadas por equipo para minimizar requests)
   async function handleMarcarTodas() {
     Alert.alert(
       'Marcar todas como vistas',
@@ -174,10 +175,10 @@ export default function AlertasScreen() {
           text: 'Confirmar',
           onPress: async () => {
             try {
-              // Marcar una por una ya que la API requiere ID de alerta
-              const noLeidas = alertas.filter(a => !a.leida);
-              await Promise.all(noLeidas.map(a => alertaService.marcarLeida(a.id)));
-              setAlertas(prev => prev.map(a => ({ ...a, leida: true })));
+              const noVistas = alertas.filter(a => !a.vista);
+              const equipoIds = [...new Set(noVistas.map(a => a.equipo_id))];
+              await Promise.all(equipoIds.map(id => alertaService.marcarTodasLeidas(id)));
+              setAlertas(prev => prev.map(a => ({ ...a, vista: true })));
             } catch {
               Alert.alert('Error', 'No se pudieron marcar las alertas.');
             }
