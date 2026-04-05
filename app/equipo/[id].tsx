@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react';
+import { Colors, FontSizes, FontWeights, Radius, Spacing } from '@/constants/theme';
+import { alertaService, datosService, equipoService } from '@/services/services';
+import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Alert, Dimensions
+  ActivityIndicator, Alert, Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
-import Svg, { Line as SvgLine, Polyline as SvgPolyline, Text as SvgText, G as SvgG } from 'react-native-svg';
-import { Colors, FontSizes, FontWeights, Spacing, Radius } from '@/constants/theme';
-import { datosService, alertaService, equipoService } from '@/services/services';
+import Svg, { G as SvgG, Line as SvgLine, Polyline as SvgPolyline, Text as SvgText } from 'react-native-svg';
 
 const C = Colors?.centinela ?? {
   background:   '#0d1117',
@@ -452,7 +456,7 @@ export default function DatosEquipoScreen() {
         day: '2-digit', month: '2-digit', year: 'numeric'
       }).replace(/\//g, '-');
       const nombreEquipo = (equipo?.nombre ?? 'Equipo').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]/g, '').trim();
-      const nombreFinal = `Reporte de temperaturas-${nombreEquipo}-${fecha}.pdf`;
+      const nombreFinal = `Reporte de temperaturas - ${nombreEquipo} - ${fecha}.pdf`;
       const uriNombrado = FileSystem.documentDirectory + nombreFinal;
       await FileSystem.copyAsync({ from: uri, to: uriNombrado });
 

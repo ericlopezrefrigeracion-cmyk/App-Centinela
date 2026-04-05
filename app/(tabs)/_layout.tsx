@@ -21,6 +21,9 @@ export default function TabLayout() {
           backgroundColor: Colors.centinela.card,
           borderTopColor: Colors.centinela.border,
           borderTopWidth: 1,
+          height: 70,
+          paddingBottom: 10,
+          paddingTop: 8,
         },
         tabBarLabelStyle: {
           fontSize: 11,
