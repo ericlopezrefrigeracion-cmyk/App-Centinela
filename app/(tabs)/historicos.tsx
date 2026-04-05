@@ -108,9 +108,32 @@ export default function HistoricosScreen() {
     const x = (i: number) => datos.length === 1 ? padL + ancho / 2 : padL + (i / (datos.length - 1)) * ancho;
     const y = (t: number) => padT + alto - ((t - tMin) / rango) * alto;
 
+    // Parsear fechas correctamente (el campo periodo puede venir como "2026-03-30 14:00" o ISO)
+    function parseFecha(str: string): Date {
+      return new Date(str.replace(' ', 'T'));
+    }
+
+    const fechas = datos.map((d: any) => parseFecha(d.fecha));
+
     const polyline = datos.map((d: any, i: number) =>
       `${x(i).toFixed(1)},${y(Number(d.temp)).toFixed(1)}`
     ).join(' ');
+
+    // Detectar gaps > 2 horas entre puntos consecutivos para línea gris
+    const DOS_HORAS = 2 * 60 * 60 * 1000;
+    const segmentosGap: string[] = [];
+    for (let i = 0; i < datos.length - 1; i++) {
+      const diff = fechas[i + 1].getTime() - fechas[i].getTime();
+      if (diff > DOS_HORAS) {
+        const x1 = x(i).toFixed(1);
+        const y1 = y(Number(datos[i].temp)).toFixed(1);
+        const x2 = x(i + 1).toFixed(1);
+        const y2 = y(Number(datos[i + 1].temp)).toFixed(1);
+        segmentosGap.push(
+          `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#bbb" stroke-width="1.5" stroke-dasharray="5,4"/>`
+        );
+      }
+    }
 
     const yMinima = minima != null ? y(minima).toFixed(1) : null;
     const yMaxima = maxima != null ? y(maxima).toFixed(1) : null;
@@ -118,8 +141,7 @@ export default function HistoricosScreen() {
     const numEtiq = Math.min(6, datos.length);
     const etiquetas = Array.from({ length: numEtiq }, (_, i) => {
       const idx = numEtiq === 1 ? 0 : Math.round(i * (datos.length - 1) / (numEtiq - 1));
-      const fechaStr = datos[idx].fecha;
-      const fecha = new Date(fechaStr.includes('T') ? fechaStr : fechaStr + 'T00:00:00');
+      const fecha = fechas[idx];
       const label = fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })
         + ' ' + fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
       return { idx, label };
@@ -158,12 +180,8 @@ export default function HistoricosScreen() {
         <polyline points="${polyline}"
           fill="none" stroke="#7ed321" stroke-width="2" stroke-linejoin="round"/>
 
-        <!-- Puntos de temperatura -->
-        ${datos.map((d, i) => {
-          const px = x(i).toFixed(1);
-          const py = y(Number(d.temp)).toFixed(1);
-          return `<circle cx="${px}" cy="${py}" r="3" fill="#7ed321"/>`;
-        }).join('')}
+        <!-- Líneas grises en gaps de datos -->
+        ${segmentosGap.join('')}
 
         ${etiquetas.map(e => `
           <text x="${x(e.idx).toFixed(1)}" y="${H - 6}"
