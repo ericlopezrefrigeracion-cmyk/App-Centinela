@@ -4,7 +4,7 @@ import {
   StyleSheet, ActivityIndicator, Alert, Dimensions
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { LineChart } from 'react-native-chart-kit';
+import Svg, { Line as SvgLine, Polyline as SvgPolyline, Text as SvgText, G as SvgG } from 'react-native-svg';
 import { Colors, FontSizes, FontWeights, Spacing, Radius } from '@/constants/theme';
 import { datosService, alertaService, equipoService } from '@/services/services';
 
@@ -69,6 +69,157 @@ function formatFechaHora(fechaStr: string): string {
     hour:   '2-digit',
     minute: '2-digit',
   });
+}
+
+// ─────────────────────────────────────────────────────
+//  GraficoSVG — gráfico de temperatura con períodos
+//  desconectados representados como línea punteada gris.
+//  Solo se usa en el tab de la app (NO en el PDF).
+// ─────────────────────────────────────────────────────
+const G_W      = ANCHO - Spacing.lg * 2 - 2;
+const G_H      = 200;
+const G_PAD_L  = 38;   // espacio para etiquetas Y
+const G_PAD_R  = 14;   // margen derecho — evita que el gráfico quede cortado
+const G_PAD_T  = 10;
+const G_PAD_B  = 28;   // espacio para etiquetas X
+const GAP_MS   = 15 * 60 * 1000; // 15 min sin datos → período desconectado
+
+function GraficoSVG({
+  datos,
+  minima,
+  maxima,
+}: {
+  datos: Dato[];
+  minima: number;
+  maxima: number;
+}) {
+  if (datos.length === 0) return null;
+
+  const W  = G_W;
+  const H  = G_H;
+  const cW = W - G_PAD_L - G_PAD_R;
+  const cH = H - G_PAD_T - G_PAD_B;
+
+  const temps  = datos.map(d => Number(d.temp));
+  const rawMin = Math.min(...temps, minima) - 1;
+  const rawMax = Math.max(...temps, maxima) + 1;
+  const rng    = rawMax - rawMin || 1;
+
+  const px = (i: number) =>
+    datos.length > 1
+      ? G_PAD_L + (i / (datos.length - 1)) * cW
+      : G_PAD_L + cW / 2;
+  const py = (t: number) => G_PAD_T + cH - ((t - rawMin) / rng) * cH;
+
+  // ── Detectar segmentos conectados y gaps ─────────
+  type Seg =
+    | { kind: 'line'; indices: number[] }
+    | { kind: 'gap'; from: number; to: number };
+
+  const segs: Seg[] = [];
+  let cur: number[] = [0];
+  for (let i = 1; i < datos.length; i++) {
+    const diff =
+      new Date(datos[i].fecha).getTime() -
+      new Date(datos[i - 1].fecha).getTime();
+    if (diff > GAP_MS) {
+      segs.push({ kind: 'line', indices: [...cur] });
+      segs.push({ kind: 'gap', from: i - 1, to: i });
+      cur = [i];
+    } else {
+      cur.push(i);
+    }
+  }
+  segs.push({ kind: 'line', indices: cur });
+
+  // ── Grilla Y (5 ticks) ───────────────────────────
+  const yTicks = Array.from({ length: 5 }, (_, i) => {
+    const t = rawMin + (rng * i) / 4;
+    return { t, y: py(t) };
+  });
+
+  // ── Etiquetas X (6 distribuidas) ────────────────
+  const xLabels = Array.from({ length: 6 }, (_, i) => {
+    const idx = Math.round((i / 5) * (datos.length - 1));
+    return { idx, label: formatHora(datos[idx].fecha) };
+  });
+
+  return (
+    <Svg width={W} height={H}>
+
+      {/* Grilla horizontal */}
+      {yTicks.map((tick, i) => (
+        <SvgG key={`g${i}`}>
+          <SvgLine
+            x1={G_PAD_L} y1={tick.y} x2={W - G_PAD_R} y2={tick.y}
+            stroke={C.border} strokeWidth={1} strokeDasharray="3,3"
+          />
+          <SvgText
+            x={G_PAD_L - 4} y={tick.y + 4}
+            textAnchor="end" fontSize={9} fill={C.textMuted}
+          >
+            {tick.t.toFixed(1)}°
+          </SvgText>
+        </SvgG>
+      ))}
+
+      {/* Línea mínima permitida */}
+      <SvgLine
+        x1={G_PAD_L} y1={py(minima)} x2={W - G_PAD_R} y2={py(minima)}
+        stroke="rgba(245,166,35,0.8)" strokeWidth={1.5} strokeDasharray="5,3"
+      />
+
+      {/* Línea máxima permitida */}
+      <SvgLine
+        x1={G_PAD_L} y1={py(maxima)} x2={W - G_PAD_R} y2={py(maxima)}
+        stroke="rgba(255,68,68,0.8)" strokeWidth={1.5} strokeDasharray="5,3"
+      />
+
+      {/* Segmentos de temperatura */}
+      {segs.map((seg, si) => {
+        if (seg.kind === 'line') {
+          if (seg.indices.length < 2) return null;
+          const pts = seg.indices
+            .map(i => `${px(i).toFixed(1)},${py(temps[i]).toFixed(1)}`)
+            .join(' ');
+          return (
+            <SvgPolyline
+              key={`l${si}`}
+              points={pts}
+              fill="none"
+              stroke={C.primary}
+              strokeWidth={2}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          );
+        }
+        // Gap: línea punteada gris une el último dato con el primero tras la reconexión
+        return (
+          <SvgLine
+            key={`gap${si}`}
+            x1={px(seg.from)} y1={py(temps[seg.from])}
+            x2={px(seg.to)}   y2={py(temps[seg.to])}
+            stroke="#6b7280"
+            strokeWidth={1.5}
+            strokeDasharray="4,4"
+          />
+        );
+      })}
+
+      {/* Etiquetas eje X */}
+      {xLabels.map((xl, i) => (
+        <SvgText
+          key={`x${i}`}
+          x={px(xl.idx)} y={H - 4}
+          textAnchor="middle" fontSize={9} fill={C.textMuted}
+        >
+          {xl.label}
+        </SvgText>
+      ))}
+
+    </Svg>
+  );
 }
 
 // ─────────────────────────────────────────────────────
@@ -326,18 +477,14 @@ export default function DatosEquipoScreen() {
   }
 
   // ── Preparar datos para el gráfico ────────────────
-  // Usar todos los datos disponibles
-  const puntos = datos;
+  const puntos   = datos;
+  const hayDatos = puntos.length > 0;
 
-  const temperaturas = puntos.map(d => d.temp);
-
-  // Mostrar solo 6 etiquetas distribuidas en el eje X
-  const etiquetasCompletas = puntos.map((d, i) => {
-    const step = Math.max(1, Math.ceil(puntos.length / 6));
-    return i % step === 0 ? formatHora(d.fecha) : '';
-  });
-
-  const hayDatos = temperaturas.length > 0;
+  // Detectar si hay al menos un período desconectado (para mostrar ítem en leyenda)
+  const hayGap = puntos.some((d, i) =>
+    i > 0 &&
+    new Date(d.fecha).getTime() - new Date(puntos[i - 1].fecha).getTime() > GAP_MS
+  );
 
   return (
     <ScrollView
@@ -362,63 +509,14 @@ export default function DatosEquipoScreen() {
 
         {hayDatos ? (
           <View style={styles.graficoContainer}>
-            <LineChart
-              data={{
-                labels: etiquetasCompletas,
-                datasets: [
-                  // Línea principal de temperatura — sin puntos
-                  {
-                    data: temperaturas,
-                    color: () => C.primary,
-                    strokeWidth: 2,
-                    withDots: false,
-                  },
-                  // Línea de temperatura mínima
-                  {
-                    data: temperaturas.map(() => equipo?.minima ?? 0),
-                    color: () => 'rgba(245, 166, 35, 0.5)',
-                    strokeWidth: 1,
-                    withDots: false,
-                  },
-                  // Línea de temperatura máxima
-                  {
-                    data: temperaturas.map(() => equipo?.maxima ?? 0),
-                    color: () => 'rgba(255, 68, 68, 0.5)',
-                    strokeWidth: 1,
-                    withDots: false,
-                  },
-                ],
-              }}
-              width={ANCHO - Spacing.lg * 2 - 2}
-              height={200}
-              chartConfig={{
-                backgroundColor:        C.card,
-                backgroundGradientFrom: C.card,
-                backgroundGradientTo:   C.cardAlt,
-                decimalPlaces: 1,
-                color: (opacity = 1) => `rgba(126, 211, 33, ${opacity})`,
-                labelColor: () => C.textMuted,
-                paddingRight: 0,
-                style: { borderRadius: Radius.md },
-                propsForDots: {
-                  r: '3',
-                  strokeWidth: '1',
-                  stroke: C.primary,
-                },
-                propsForBackgroundLines: {
-                  stroke: C.border,
-                  strokeDasharray: '4',
-                },
-              }}
-              bezier
-              style={styles.grafico}
-              withInnerLines
-              withOuterLines={false}
-              withVerticalLabels
-              withHorizontalLabels
+            {/* Gráfico SVG personalizado — NO es el PDF, es el que se ve en el tab */}
+            <GraficoSVG
+              datos={puntos}
+              minima={equipo?.minima ?? 0}
+              maxima={equipo?.maxima ?? 0}
             />
 
-            {/* Leyenda manual */}
+            {/* Leyenda */}
             <View style={styles.leyenda}>
               <View style={styles.leyendaItem}>
                 <View style={[styles.leyendaLinea, { backgroundColor: C.primary }]} />
@@ -432,6 +530,17 @@ export default function DatosEquipoScreen() {
                 <View style={[styles.leyendaLinea, { backgroundColor: 'rgba(255,68,68,0.7)' }]} />
                 <Text style={styles.leyendaText}>Máx: {equipo?.maxima}°C</Text>
               </View>
+              {hayGap && (
+                <View style={styles.leyendaItem}>
+                  <Svg width={20} height={4}>
+                    <SvgLine
+                      x1={0} y1={2} x2={20} y2={2}
+                      stroke="#6b7280" strokeWidth={2} strokeDasharray="4,3"
+                    />
+                  </Svg>
+                  <Text style={styles.leyendaText}>Desconectado</Text>
+                </View>
+              )}
             </View>
           </View>
         ) : (
