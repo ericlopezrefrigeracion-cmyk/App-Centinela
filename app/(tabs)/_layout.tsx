@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -9,11 +9,11 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
       screenOptions={{
-        // Usa el verde de Centinela para el tab activo
         tabBarActiveTintColor: Colors.centinela.primary,
         tabBarInactiveTintColor: Colors.centinela.textMuted,
         headerShown: false,
@@ -22,12 +22,9 @@ export default function TabLayout() {
           backgroundColor: Colors.centinela.card,
           borderTopColor: Colors.centinela.border,
           borderTopWidth: 1,
-          height: Platform.OS === 'android' ? 64 : 70,
-          paddingBottom: Platform.OS === 'android' ? 4 : 10,
+          height: 58 + insets.bottom,
+          paddingBottom: insets.bottom,
           paddingTop: 8,
-        },
-        tabBarItemStyle: {
-          paddingBottom: Platform.OS === 'android' ? 6 : 0,
         },
         tabBarLabelStyle: {
           fontSize: 11,
