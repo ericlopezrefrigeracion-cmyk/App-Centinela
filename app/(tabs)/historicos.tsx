@@ -108,9 +108,23 @@ export default function HistoricosScreen() {
     const x = (i: number) => datos.length === 1 ? padL + ancho / 2 : padL + (i / (datos.length - 1)) * ancho;
     const y = (t: number) => padT + alto - ((t - tMin) / rango) * alto;
 
-    // Parsear fechas correctamente (el campo periodo puede venir como "2026-03-30 14:00" o ISO)
+    // Parsear fechas manualmente para máxima compatibilidad.
+    // El campo periodo puede venir como "2026-03-30 14:00:00", "2026-03-30T14:00:00Z", etc.
     function parseFecha(str: string): Date {
-      return new Date(str.replace(' ', 'T'));
+      if (!str) return new Date(NaN);
+      // Extraer partes numéricas directamente del string
+      const match = str.match(/(\d{4})-(\d{2})-(\d{2})[\sT](\d{2}):(\d{2})/);
+      if (match) {
+        const [, anio, mes, dia, hora, min] = match;
+        return new Date(Number(anio), Number(mes) - 1, Number(dia), Number(hora), Number(min));
+      }
+      // Fallback para formato solo fecha "2026-03-30"
+      const soloFecha = str.match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (soloFecha) {
+        const [, anio, mes, dia] = soloFecha;
+        return new Date(Number(anio), Number(mes) - 1, Number(dia));
+      }
+      return new Date(NaN);
     }
 
     const fechas = datos.map((d: any) => parseFecha(d.fecha));
@@ -142,8 +156,11 @@ export default function HistoricosScreen() {
     const etiquetas = Array.from({ length: numEtiq }, (_, i) => {
       const idx = numEtiq === 1 ? 0 : Math.round(i * (datos.length - 1) / (numEtiq - 1));
       const fecha = fechas[idx];
-      const label = fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })
-        + ' ' + fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+      const valida = !isNaN(fecha.getTime());
+      const label = valida
+        ? fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })
+          + ' ' + fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+        : '—';
       return { idx, label };
     });
 
@@ -204,7 +221,6 @@ export default function HistoricosScreen() {
     try {
       setDescargando(true);
 
-      const semanaObj = semanas.find(s => s.fechaInicio === semanaSeleccionada);
       // Lunes 00:00:00 hora local
       const desdeLocal = new Date(semanaSeleccionada + 'T00:00:00');
       const desde = desdeLocal.toISOString();
@@ -255,8 +271,7 @@ export default function HistoricosScreen() {
 
       const Print      = await import('expo-print');
       const Sharing    = await import('expo-sharing');
-      const FileSystemModule = await import('expo-file-system/legacy');
-      const FileSystem = FileSystemModule.default ?? FileSystemModule;
+      const FileSystem = await import('expo-file-system/legacy');
 
       const graficoSVG = generarGraficoSVG(datos, equipo?.minima, equipo?.maxima);
 
