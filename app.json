@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Centinela",
-    "slug": "Centinela",
+    "slug": "app-centinela",
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -64,8 +64,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "5627a5c4-473a-4b31-9946-ded0687db6f8"
+        "projectId": "c8df514a-3a71-413f-990c-60eae76cdb2e"
       }
-    }
+    },
+    "owner": "eric123456"
   }
 }
