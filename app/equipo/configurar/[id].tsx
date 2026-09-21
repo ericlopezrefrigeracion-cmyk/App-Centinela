@@ -343,7 +343,7 @@ export default function ConfigurarEquipoScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.switchLabel}>Alertas activas</Text>
             <Text style={styles.switchSub}>
-              Recibir notificaciones push cuando la temperatura esté fuera de rango
+              Registrar alertas cuando la temperatura esté fuera de rango
             </Text>
           </View>
           <Switch
@@ -438,6 +438,9 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: Spacing.lg,
+    maxWidth: 600,
+    width: '100%',
+    alignSelf: 'center',
   },
   centrado: {
     flex: 1,

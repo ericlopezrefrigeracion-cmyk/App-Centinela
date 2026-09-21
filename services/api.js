@@ -1,5 +1,5 @@
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
+import * as storage from './storage';
 
 export const BASE_URL = 'https://api.telemet.com.ar';
 
@@ -12,7 +12,7 @@ const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     try {
-      const token = await SecureStore.getItemAsync('centinela_token');
+      const token = await storage.getItemAsync('centinela_token');
       if (token) config.headers.Authorization = `Bearer ${token}`;
     } catch (e) {}
     return config;
@@ -54,7 +54,7 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = await SecureStore.getItemAsync('centinela_refresh_token');
+        const refreshToken = await storage.getItemAsync('centinela_refresh_token');
         if (!refreshToken) throw new Error('no refresh token');
 
         const res = await axios.post(`${BASE_URL}/auth/refresh`, { refresh_token: refreshToken });
@@ -65,17 +65,17 @@ api.interceptors.response.use(
         const newAccessToken  = res.data.token?.access_token  ?? res.data.access_token;
         const newRefreshToken = res.data.token?.refresh_token ?? res.data.refresh_token;
 
-        await SecureStore.setItemAsync('centinela_token', newAccessToken);
-        await SecureStore.setItemAsync('centinela_refresh_token', newRefreshToken);
+        await storage.setItemAsync('centinela_token', newAccessToken);
+        await storage.setItemAsync('centinela_refresh_token', newRefreshToken);
 
         resolveQueue(newAccessToken);
         orig.headers.Authorization = `Bearer ${newAccessToken}`;
         return api(orig);
       } catch (refreshError) {
         rejectQueue(refreshError);
-        await SecureStore.deleteItemAsync('centinela_token');
-        await SecureStore.deleteItemAsync('centinela_refresh_token');
-        await SecureStore.deleteItemAsync('centinela_usuario');
+        await storage.deleteItemAsync('centinela_token');
+        await storage.deleteItemAsync('centinela_refresh_token');
+        await storage.deleteItemAsync('centinela_usuario');
         if (typeof global !== 'undefined' && global._centinelaLogout) {
           global._centinelaLogout();
         }

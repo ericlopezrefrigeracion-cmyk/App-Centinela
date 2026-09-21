@@ -1,8 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
+import * as storage from '../services/storage';
 import { authService } from '../services/services';
 
 const AuthContext = createContext(null);
@@ -16,8 +13,8 @@ export function AuthProvider({ children }) {
 
   async function verificarSesion() {
     try {
-      const t = await SecureStore.getItemAsync('centinela_token');
-      const u = await SecureStore.getItemAsync('centinela_usuario');
+      const t = await storage.getItemAsync('centinela_token');
+      const u = await storage.getItemAsync('centinela_usuario');
       if (t && u) {
         setToken(t);
         setUsuario(JSON.parse(u));
@@ -32,26 +29,11 @@ export function AuthProvider({ children }) {
   async function login(mail, password) {
     try {
       const res = await authService.login(mail, password);
-      await SecureStore.setItemAsync('centinela_token', res.accessToken);
-      await SecureStore.setItemAsync('centinela_refresh_token', res.refreshToken);
-      await SecureStore.setItemAsync('centinela_usuario', JSON.stringify(res.usuario));
+      await storage.setItemAsync('centinela_token', res.accessToken);
+      await storage.setItemAsync('centinela_refresh_token', res.refreshToken);
+      await storage.setItemAsync('centinela_usuario', JSON.stringify(res.usuario));
       setToken(res.accessToken);
       setUsuario(res.usuario);
-
-      // Registrar token FCM en background
-      try {
-        const { status } = await Notifications.getPermissionsAsync();
-        const notifActiva = await AsyncStorage.getItem('centinela_notif');
-        if (status === 'granted' && notifActiva === 'true') {
-          const tokenData = await Notifications.getDevicePushTokenAsync();
-          const plataforma = Platform.OS === 'ios' ? 'ios' : 'android';
-          await authService.registrarFcmToken(tokenData.data, plataforma);
-          await AsyncStorage.setItem('centinela_fcm_token', tokenData.data);
-        }
-      } catch (e) {
-        console.log('FCM registration skipped:', e);
-      }
-
       return { ok: true };
     } catch (e) {
       const msg = e.response?.data?.detail || 'Credenciales incorrectas';
@@ -94,16 +76,16 @@ export function AuthProvider({ children }) {
 
   async function logout() {
     try {
-      const refreshToken = await SecureStore.getItemAsync('centinela_refresh_token');
+      const refreshToken = await storage.getItemAsync('centinela_refresh_token');
       if (refreshToken) {
         await authService.cerrarSesion(refreshToken);
       }
     } catch {
       // Si falla el logout en el servidor igual limpiamos localmente
     }
-    await SecureStore.deleteItemAsync('centinela_token');
-    await SecureStore.deleteItemAsync('centinela_refresh_token');
-    await SecureStore.deleteItemAsync('centinela_usuario');
+    await storage.deleteItemAsync('centinela_token');
+    await storage.deleteItemAsync('centinela_refresh_token');
+    await storage.deleteItemAsync('centinela_usuario');
     setToken(null);
     setUsuario(null);
   }

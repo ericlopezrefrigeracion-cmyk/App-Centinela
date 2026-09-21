@@ -1,22 +1,11 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Alert, Switch, Linking, Platform
+  StyleSheet, ActivityIndicator, Alert, Linking
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Notifications from 'expo-notifications';
 import { Colors, FontSizes, FontWeights, Spacing, Radius } from '@/constants/theme';
 import { authService } from '@/services/services';
 import { useAuth } from '@/context/AuthContext';
-
-// Configurar comportamiento de notificaciones
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge:  true,
-  }),
-});
 
 const C = Colors?.centinela ?? {
   background:    '#0d1117',
@@ -46,22 +35,10 @@ export default function PerfilScreen() {
   const { logout } = useAuth();
   const [usuario, setUsuario]   = useState<any>(null);
   const [cargando, setCargando] = useState(true);
-  const [notifActivas, setNotifActivas] = useState(false);
-  const [permisoEstado, setPermisoEstado] = useState('undetermined');
 
   useEffect(() => {
     cargarPerfil();
-    verificarPermisos();
   }, []);
-
-  async function verificarPermisos() {
-    try {
-      const { status } = await Notifications.getPermissionsAsync();
-      setPermisoEstado(status);
-      const guardado = await AsyncStorage.getItem('centinela_notif');
-      setNotifActivas(status === 'granted' && guardado === 'true');
-    } catch {}
-  }
 
   async function cargarPerfil() {
     try {
@@ -80,62 +57,10 @@ export default function PerfilScreen() {
     }
   }
 
-  async function registrarTokenFCM() {
-    try {
-      const tokenData = await Notifications.getDevicePushTokenAsync();
-      const fcmToken = tokenData.data;
-      const plataforma = Platform.OS === 'ios' ? 'ios' : 'android';
-      await authService.registrarFcmToken(fcmToken, plataforma);
-      await AsyncStorage.setItem('centinela_fcm_token', fcmToken);
-    } catch (e) {
-      console.log('Error registrando FCM token:', e);
-    }
-  }
-
-  async function toggleNotif(val: boolean) {
-    if (val) {
-      // Solicitar permiso
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(
-          'Permiso denegado',
-          'Para recibir alertas, habilitá las notificaciones en la configuración del sistema.'
-        );
-        return;
-      }
-      setPermisoEstado(status);
-      setNotifActivas(true);
-      await AsyncStorage.setItem('centinela_notif', 'true');
-      await registrarTokenFCM();
-      Alert.alert('Notificaciones activadas', 'Vas a recibir alertas cuando la temperatura salga de rango.');
-    } else {
-      setNotifActivas(false);
-      await AsyncStorage.setItem('centinela_notif', 'false');
-      // Eliminar token del servidor
-      try {
-        const token = await AsyncStorage.getItem('centinela_fcm_token');
-        if (token) {
-          await authService.eliminarFcmToken(token);
-          await AsyncStorage.removeItem('centinela_fcm_token');
-        }
-      } catch {}
-    }
-  }
-
   async function handleLogout() {
     Alert.alert('Cerrar sesión', '¿Estás seguro?', [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Cerrar sesión', style: 'destructive', onPress: async () => {
-        // Eliminar token FCM al cerrar sesión
-        try {
-          const token = await AsyncStorage.getItem('centinela_fcm_token');
-          if (token) {
-            await authService.eliminarFcmToken(token);
-            await AsyncStorage.removeItem('centinela_fcm_token');
-          }
-        } catch {}
-        logout();
-      }},
+      { text: 'Cerrar sesión', style: 'destructive', onPress: () => logout() },
     ]);
   }
 
@@ -170,27 +95,6 @@ export default function PerfilScreen() {
         <FilaDato label="CUIT"     valor={usuario?.cuit ?? ''} />
       </View>
 
-      {/* Notificaciones */}
-      <View style={styles.seccion}>
-        <Text style={styles.seccionTitulo}>Notificaciones push</Text>
-        <View style={styles.switchRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.switchLabel}>Recibir alertas de temperatura</Text>
-            <Text style={styles.switchSub}>
-              {permisoEstado === 'granted'
-                ? notifActivas ? 'Activas — recibirás alertas al instante' : 'Permiso otorgado pero desactivadas'
-                : 'Se solicitará permiso al activar'}
-            </Text>
-          </View>
-          <Switch
-            value={notifActivas}
-            onValueChange={toggleNotif}
-            trackColor={{ false: C.border, true: 'rgba(126,211,33,0.4)' }}
-            thumbColor={notifActivas ? C.primary : '#666'}
-          />
-        </View>
-      </View>
-
       {/* Soporte */}
       <View style={styles.seccion}>
         <Text style={styles.seccionTitulo}>Soporte</Text>
@@ -215,7 +119,7 @@ export default function PerfilScreen() {
 
 const styles = StyleSheet.create({
   container:  { flex: 1, backgroundColor: C.background },
-  scroll:     { padding: Spacing.lg, paddingBottom: 40 },
+  scroll:     { padding: Spacing.lg, paddingBottom: 40, maxWidth: 600, width: '100%', alignSelf: 'center' },
   centrado:   { flex: 1, backgroundColor: C.background, justifyContent: 'center', alignItems: 'center' },
 
   header:     { alignItems: 'center', marginBottom: Spacing.xl },
@@ -230,10 +134,6 @@ const styles = StyleSheet.create({
   filaDato:  { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border },
   filaLabel: { fontSize: FontSizes.sm, color: C.textSub },
   filaValor: { fontSize: FontSizes.sm, color: C.text, fontWeight: FontWeights.medium },
-
-  switchRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, gap: 12 },
-  switchLabel: { fontSize: FontSizes.sm, color: C.text, marginBottom: 2 },
-  switchSub:   { fontSize: FontSizes.xs, color: C.textMuted },
 
   linkRow:  { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border },
   linkText: { fontSize: FontSizes.sm, color: C.primary },

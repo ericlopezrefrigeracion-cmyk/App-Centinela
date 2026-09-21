@@ -66,14 +66,6 @@ export const authService = {
     const res = await api.patch('/app/perfil', datos);
     return res.data;
   },
-
-  registrarFcmToken: async (token, plataforma) => {
-    await api.post('/app/perfil/fcm-token', { token, plataforma });
-  },
-
-  eliminarFcmToken: async (token) => {
-    await api.delete('/app/perfil/fcm-token', { data: { token } });
-  },
 };
 
 // ── EQUIPOS ───────────────────────────────────────────

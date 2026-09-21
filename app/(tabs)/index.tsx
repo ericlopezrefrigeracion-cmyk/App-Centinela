@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { equipoService } from '@/services/services';
 import { Colors, FontSizes, FontWeights, Spacing, Radius, Shadow } from '@/constants/theme';
+import { useBreakpoint } from '@/hooks/use-breakpoint';
 
 const C = Colors.centinela;
 
@@ -134,6 +135,8 @@ function EquipoCard({ equipo }: { equipo: Equipo }) {
 // ─────────────────────────────────────────────────────
 export default function HomeScreen() {
   const { usuario, logout } = useAuth();
+  const { esMobile, esTablet } = useBreakpoint();
+  const numColumns = esMobile ? 1 : esTablet ? 2 : 3;
   const [equipos, setEquipos]         = useState<Equipo[]>([]);
   const [cargando, setCargando]       = useState(true);
   const [refrescando, setRefrescando] = useState(false);
@@ -253,12 +256,15 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* Lista de equipos */}
+      {/* Lista de equipos -- grilla de 1/2/3 columnas según el ancho de pantalla */}
       <FlatList
+        key={numColumns}
         data={equipos}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => <EquipoCard equipo={item} />}
-        contentContainerStyle={styles.lista}
+        numColumns={numColumns}
+        columnWrapperStyle={numColumns > 1 ? styles.fila : undefined}
+        contentContainerStyle={[styles.lista, styles.listaAncha]}
         refreshControl={
           <RefreshControl
             refreshing={refrescando}
@@ -386,9 +392,20 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     paddingBottom: 100,
   },
+  // En pantallas anchas centra la grilla en vez de estirarla de punta a punta
+  listaAncha: {
+    maxWidth: 1200,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  // Espaciado entre columnas cuando hay más de una (numColumns > 1)
+  fila: {
+    gap: Spacing.md,
+  },
 
   // Tarjeta
   card: {
+    flex: 1,
     backgroundColor: C.card,
     borderRadius: Radius.lg,
     padding: Spacing.md,

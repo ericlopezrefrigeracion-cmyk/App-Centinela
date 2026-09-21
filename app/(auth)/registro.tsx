@@ -99,7 +99,7 @@ export default function RegistroScreen() {
 
 const s = StyleSheet.create({
   scroll:    { flex: 1, backgroundColor: C.bg },
-  container: { padding: 28, paddingTop: 60, paddingBottom: 40 },
+  container: { padding: 28, paddingTop: 60, paddingBottom: 40, maxWidth: 440, width: '100%', alignSelf: 'center' },
   logo:      { fontSize: 28, fontWeight: '800', color: C.text, marginBottom: 24 },
   title:     { fontSize: 24, fontWeight: '800', color: C.text, marginBottom: 6 },
   sub:       { fontSize: 14, color: '#a0afbe', marginBottom: 28 },

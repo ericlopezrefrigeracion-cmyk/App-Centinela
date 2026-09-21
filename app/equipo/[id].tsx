@@ -1,9 +1,10 @@
 import { Colors, FontSizes, FontWeights, Radius, Spacing } from '@/constants/theme';
 import { alertaService, datosService, equipoService } from '@/services/services';
+import { exportarReportePDF } from '@/services/exportarReportePDF';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Dimensions,
+  ActivityIndicator, Alert, useWindowDimensions,
   ScrollView,
   StyleSheet,
   Text,
@@ -29,8 +30,6 @@ const C = Colors?.centinela ?? {
   white:        '#ffffff',
   black:        '#000000',
 };
-
-const ANCHO = Dimensions.get('window').width;
 
 // ─────────────────────────────────────────────────────
 //  Tipos
@@ -80,7 +79,6 @@ function formatFechaHora(fechaStr: string): string {
 //  desconectados representados como línea punteada gris.
 //  Solo se usa en el tab de la app (NO en el PDF).
 // ─────────────────────────────────────────────────────
-const G_W      = ANCHO - Spacing.lg * 2 - 2;
 const G_H      = 200;
 const G_PAD_L  = 38;   // espacio para etiquetas Y
 const G_PAD_R  = 14;   // margen derecho — evita que el gráfico quede cortado
@@ -92,14 +90,16 @@ function GraficoSVG({
   datos,
   minima,
   maxima,
+  width,
 }: {
   datos: Dato[];
   minima: number;
   maxima: number;
+  width: number;
 }) {
   if (datos.length === 0) return null;
 
-  const W  = G_W;
+  const W  = width;
   const H  = G_H;
   const cW = W - G_PAD_L - G_PAD_R;
   const cH = H - G_PAD_T - G_PAD_B;
@@ -231,6 +231,12 @@ function GraficoSVG({
 // ─────────────────────────────────────────────────────
 export default function DatosEquipoScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  // Ancho reactivo del gráfico -- antes se leía una sola vez con Dimensions.get('window'), así
+  // que no se actualizaba si la ventana cambiaba de tamaño (redimensionar en desktop, girar el
+  // celular). El contenido de la pantalla está acotado a 600 (ver styles.scroll), así que el
+  // gráfico nunca necesita ser más ancho que eso.
+  const { width: anchoVentana } = useWindowDimensions();
+  const graficoAncho = Math.min(anchoVentana, 600) - Spacing.lg * 2 - 2;
 
   const [equipo, setEquipo]     = useState<Equipo | null>(null);
   const [datos, setDatos]       = useState<Dato[]>([]);
@@ -367,11 +373,6 @@ export default function DatosEquipoScreen() {
     try {
       setDescargando(true);
 
-      const Print      = await import('expo-print');
-      const Sharing    = await import('expo-sharing');
-      const FileSystemModule = await import('expo-file-system/legacy');
-      const FileSystem = FileSystemModule.default ?? FileSystemModule;
-
       const graficoSVG = generarGraficoSVG();
 
       const filasAlertas = alertas.map(a => `
@@ -449,21 +450,12 @@ export default function DatosEquipoScreen() {
         </html>
       `;
 
-      const { uri } = await Print.printToFileAsync({ html });
-
-      // Renombrar el archivo con nombre descriptivo
       const fecha = new Date().toLocaleDateString('es-AR', {
         day: '2-digit', month: '2-digit', year: 'numeric'
       }).replace(/\//g, '-');
       const nombreEquipo = (equipo?.nombre ?? 'Equipo').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]/g, '').trim();
-      const nombreFinal = `Reporte de temperaturas - ${nombreEquipo} - ${fecha}.pdf`;
-      const uriNombrado = FileSystem.documentDirectory + nombreFinal;
-      await FileSystem.copyAsync({ from: uri, to: uriNombrado });
-
-      await Sharing.shareAsync(uriNombrado, {
-        mimeType:    'application/pdf',
-        dialogTitle: nombreFinal,
-      });
+      const nombreFinal = `Reporte de temperaturas - ${nombreEquipo} - ${fecha}`;
+      exportarReportePDF(html, nombreFinal);
     } catch (e: any) {
       Alert.alert('Error PDF', e?.message ?? String(e));
     } finally {
@@ -494,7 +486,6 @@ export default function DatosEquipoScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.scroll}
-      showsVerticalScrollIndicator={false}
     >
 
       {/* Info del equipo */}
@@ -518,6 +509,7 @@ export default function DatosEquipoScreen() {
               datos={puntos}
               minima={equipo?.minima ?? 0}
               maxima={equipo?.maxima ?? 0}
+              width={graficoAncho}
             />
 
             {/* Leyenda */}
@@ -616,6 +608,9 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: Spacing.lg,
+    maxWidth: 600,
+    width: '100%',
+    alignSelf: 'center',
   },
   centrado: {
     flex: 1,

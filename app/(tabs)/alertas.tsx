@@ -240,7 +240,7 @@ export default function AlertasScreen() {
         renderItem={({ item }) => (
           <AlertaItem alerta={item} onMarcarVista={handleMarcarVista} />
         )}
-        contentContainerStyle={styles.lista}
+        contentContainerStyle={[styles.lista, styles.listaAncha]}
         refreshControl={
           <RefreshControl
             refreshing={refrescando}
@@ -341,10 +341,16 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.bold,
   },
 
-  // Lista
+  // Lista -- es un feed cronológico, así que en pantallas anchas se acota el ancho en vez de
+  // pasar a grilla (mantiene el orden de lectura de arriba hacia abajo).
   lista: {
     padding: Spacing.md,
     paddingBottom: 40,
+  },
+  listaAncha: {
+    maxWidth: 800,
+    width: '100%',
+    alignSelf: 'center',
   },
 
   // Item alerta

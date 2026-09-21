@@ -7,29 +7,8 @@
     "icon": "./assets/images/icon.png",
     "scheme": "centinela",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#080c12",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.VIBRATE",
-        "android.permission.POST_NOTIFICATIONS"
-      ],
-      "package": "com.telemetiot.Centinela",
-      "googleServicesFile": "./google-services.json"
-    },
     "web": {
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -46,26 +25,14 @@
           }
         }
       ],
-      "expo-secure-store",
-      "expo-font",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/icon.png",
-          "color": "#7ed321",
-          "sounds": []
-        }
-      ]
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "c8df514a-3a71-413f-990c-60eae76cdb2e"
-      }
+      "router": {}
     },
     "owner": "eric123456"
   }

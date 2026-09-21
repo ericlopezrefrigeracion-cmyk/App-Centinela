@@ -179,6 +179,9 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: Spacing.lg,
+    maxWidth: 600,
+    width: '100%',
+    alignSelf: 'center',
   },
   descripcion: {
     color: C.textSub,

@@ -1,5 +1,6 @@
 import { Colors, FontSizes, FontWeights, Radius, Spacing } from '@/constants/theme';
 import { alertaService, datosService, equipoService } from '@/services/services';
+import { exportarReportePDF } from '@/services/exportarReportePDF';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -269,10 +270,6 @@ export default function HistoricosScreen() {
       const equipo = equipos.find(e => String(e.id) === equipoSeleccionado) as any;
       const semana = semanas.find(s => s.fechaInicio === semanaSeleccionada);
 
-      const Print      = await import('expo-print');
-      const Sharing    = await import('expo-sharing');
-      const FileSystem = await import('expo-file-system/legacy');
-
       const graficoSVG = generarGraficoSVG(datos, equipo?.minima, equipo?.maxima);
 
       // Estadísticas de temperatura
@@ -391,18 +388,9 @@ export default function HistoricosScreen() {
         </html>
       `;
 
-      const { uri } = await Print.printToFileAsync({ html });
-
-      // Renombrar el archivo con nombre descriptivo
       const nombreEquipo = (equipo?.nombre ?? 'Equipo').replace(/[^a-zA-Z0-9 áéíóúÁÉÍÓÚñÑ]/g, '').trim();
-      const nombreFinal = `Reporte de temperaturas - ${nombreEquipo} - ${semanaSeleccionada}.pdf`;
-      const uriNombrado = FileSystem.documentDirectory + nombreFinal;
-      await FileSystem.copyAsync({ from: uri, to: uriNombrado });
-
-      await Sharing.shareAsync(uriNombrado, {
-        mimeType:    'application/pdf',
-        dialogTitle: nombreFinal,
-      });
+      const nombreFinal = `Reporte de temperaturas - ${nombreEquipo} - ${semanaSeleccionada}`;
+      exportarReportePDF(html, nombreFinal);
     } catch {
       Alert.alert('Error', 'No se pudo generar el reporte.');
     } finally {
@@ -508,6 +496,9 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: Spacing.lg,
+    maxWidth: 600,
+    width: '100%',
+    alignSelf: 'center',
   },
   centrado: {
     flex: 1,

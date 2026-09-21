@@ -78,7 +78,7 @@ export default function VerificarEmailScreen() {
 }
 
 const s = StyleSheet.create({
-  container:   { flex: 1, backgroundColor: '#080c10', padding: 28, paddingTop: 80 },
+  container:   { flex: 1, backgroundColor: '#080c10', padding: 28, paddingTop: 80, maxWidth: 440, width: '100%', alignSelf: 'center' },
   logo:        { fontSize: 28, fontWeight: '800', color: '#f0f4ff', marginBottom: 32 },
   title:       { fontSize: 24, fontWeight: '800', color: '#f0f4ff', marginBottom: 10 },
   sub:         { fontSize: 15, color: '#a0afbe', marginBottom: 36, lineHeight: 22 },

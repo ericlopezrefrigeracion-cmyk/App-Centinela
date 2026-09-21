@@ -48,9 +48,7 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        {/* Pantallas originales de Expo */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
 
         {/* Pantallas de Centinela */}
         <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
