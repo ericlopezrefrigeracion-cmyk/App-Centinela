@@ -11,7 +11,7 @@ echo "→ Obteniendo certificado SSL para $DOMAIN..."
 
 docker compose stop nginx 2>/dev/null || true
 
-docker compose run --rm --publish 80:80 --no-deps certbot certonly \
+docker compose run --rm --publish 80:80 --no-deps --entrypoint certbot certbot certonly \
   --standalone \
   --non-interactive \
   --agree-tos \
