@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, RefreshControl, ActivityIndicator, Alert
+  StyleSheet, RefreshControl, ActivityIndicator
 } from 'react-native';
 import { Colors, FontSizes, FontWeights, Spacing, Radius } from '@/constants/theme';
 import { alertaService, equipoService } from '@/services/services';
+import { showAlert } from '@/components/AlertProvider';
 
 const C = Colors?.centinela ?? {
   background:   '#0d1117',
@@ -160,13 +161,13 @@ export default function AlertasScreen() {
         prev.map(a => a.id === id ? { ...a, vista: true, leida: true } : a)
       );
     } catch {
-      Alert.alert('Error', 'No se pudo marcar la alerta como vista.');
+      showAlert('Error', 'No se pudo marcar la alerta como vista.');
     }
   }
 
   // Marcar todas como vistas (agrupadas por equipo para minimizar requests)
   async function handleMarcarTodas() {
-    Alert.alert(
+    showAlert(
       'Marcar todas como vistas',
       '¿Querés marcar todas las alertas como vistas?',
       [
@@ -180,7 +181,7 @@ export default function AlertasScreen() {
               await Promise.all(equipoIds.map(id => alertaService.marcarTodasLeidas(id)));
               setAlertas(prev => prev.map(a => ({ ...a, vista: true })));
             } catch {
-              Alert.alert('Error', 'No se pudieron marcar las alertas.');
+              showAlert('Error', 'No se pudieron marcar las alertas.');
             }
           },
         },

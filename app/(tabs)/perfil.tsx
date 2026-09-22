@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Alert, Linking
+  StyleSheet, ActivityIndicator, Linking
 } from 'react-native';
 import { Colors, FontSizes, FontWeights, Spacing, Radius } from '@/constants/theme';
 import { authService } from '@/services/services';
+import { showAlert } from '@/components/AlertProvider';
 import { useAuth } from '@/context/AuthContext';
 
 const C = Colors?.centinela ?? {
@@ -58,7 +59,7 @@ export default function PerfilScreen() {
   }
 
   async function handleLogout() {
-    Alert.alert('Cerrar sesión', '¿Estás seguro?', [
+    showAlert('Cerrar sesión', '¿Estás seguro?', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Cerrar sesión', style: 'destructive', onPress: () => logout() },
     ]);

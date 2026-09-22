@@ -3,9 +3,10 @@ import { useRouter } from 'expo-router';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, KeyboardAvoidingView, Platform,
-  ScrollView, ActivityIndicator, Alert
+  ScrollView, ActivityIndicator
 } from 'react-native';
 import { authService } from '@/services/services';
+import { showAlert } from '@/components/AlertProvider';
 import { useAuth } from '@/context/AuthContext';
 import { Colors, FontSizes, FontWeights, Spacing, Radius } from '@/constants/theme';
 
@@ -64,7 +65,7 @@ export default function LoginScreen() {
     setCargando(false);
 
     if (!resultado.ok) {
-      Alert.alert('Error al iniciar sesión', resultado.mensaje);
+      showAlert('Error al iniciar sesión', resultado.mensaje);
     }
     // Si ok=true el AuthContext actualiza el estado y _layout.tsx
     // redirige automáticamente a /(tabs)
@@ -73,7 +74,7 @@ export default function LoginScreen() {
   // ── Recuperar contraseña ─────────────────────────────
   async function handleRecuperar() {
     if (!email.trim()) {
-      Alert.alert(
+      showAlert(
         'Ingresá tu email',
         'Escribí tu email en el campo de arriba antes de recuperar la contraseña.'
       );
@@ -81,12 +82,12 @@ export default function LoginScreen() {
     }
     try {
       await authService.recuperarPassword(email.trim().toLowerCase());
-      Alert.alert(
+      showAlert(
         'Email enviado',
         'Revisá tu bandeja de entrada para recuperar la contraseña.'
       );
     } catch {
-      Alert.alert('Error', 'No se pudo enviar el email. Verificá la dirección ingresada.');
+      showAlert('Error', 'No se pudo enviar el email. Verificá la dirección ingresada.');
     }
   }
 

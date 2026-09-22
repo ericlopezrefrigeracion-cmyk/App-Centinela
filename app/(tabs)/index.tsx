@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, RefreshControl, ActivityIndicator, Alert, AppState
+  StyleSheet, RefreshControl, ActivityIndicator, AppState
 } from 'react-native';
 import { router } from 'expo-router';
+import { showAlert } from '@/components/AlertProvider';
 import { useAuth } from '@/context/AuthContext';
 import { equipoService } from '@/services/services';
 import { Colors, FontSizes, FontWeights, Spacing, Radius, Shadow } from '@/constants/theme';
@@ -209,7 +210,7 @@ export default function HomeScreen() {
   }, []);
 
   function handleLogout() {
-    Alert.alert(
+    showAlert(
       'Cerrar sesión',
       '¿Estás seguro?',
       [

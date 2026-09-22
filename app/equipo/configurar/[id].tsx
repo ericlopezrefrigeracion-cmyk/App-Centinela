@@ -1,9 +1,10 @@
 import { Colors, FontSizes, FontWeights, Radius, Spacing } from '@/constants/theme';
 import { equipoService } from '@/services/services';
+import { showAlert } from '@/components/AlertProvider';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator, Alert,
+    ActivityIndicator,
     ScrollView,
     StyleSheet,
     Switch,
@@ -69,7 +70,7 @@ export default function ConfigurarEquipoScreen() {
         reportesSemanales: data.resumen_semanal     ?? false,
       });
     } catch {
-      Alert.alert('Error', 'No se pudo cargar la configuración del equipo.');
+      showAlert('Error', 'No se pudo cargar la configuración del equipo.');
     } finally {
       setCargando(false);
     }
@@ -166,20 +167,20 @@ export default function ConfigurarEquipoScreen() {
         alertas_cliente: form.alertasActivas,
         resumen_semanal: form.reportesSemanales,
       });
-      Alert.alert(
+      showAlert(
         'Guardado',
         'La configuración fue actualizada correctamente.',
         [{ text: 'OK', onPress: () => router.back() }]
       );
     } catch {
-      Alert.alert('Error', 'No se pudo guardar la configuración.');
+      showAlert('Error', 'No se pudo guardar la configuración.');
     } finally {
       setGuardando(false);
     }
   }
 
   async function handleEliminar() {
-    Alert.alert(
+    showAlert(
       'Eliminar equipo',
       '¿Estás seguro? Esta acción no se puede deshacer.',
       [
@@ -192,7 +193,7 @@ export default function ConfigurarEquipoScreen() {
               await equipoService.eliminarEquipo(id);
               router.replace('/(tabs)');
             } catch {
-              Alert.alert('Error', 'No se pudo eliminar el equipo.');
+              showAlert('Error', 'No se pudo eliminar el equipo.');
             }
           },
         },

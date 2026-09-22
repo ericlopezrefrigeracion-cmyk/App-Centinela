@@ -4,7 +4,7 @@ import { exportarReportePDF } from '@/services/exportarReportePDF';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, useWindowDimensions,
+  ActivityIndicator, useWindowDimensions,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,6 +12,7 @@ import {
   View
 } from 'react-native';
 import Svg, { G as SvgG, Line as SvgLine, Polyline as SvgPolyline, Text as SvgText } from 'react-native-svg';
+import { showAlert } from '@/components/AlertProvider';
 
 const C = Colors?.centinela ?? {
   background:   '#0d1117',
@@ -285,7 +286,7 @@ export default function DatosEquipoScreen() {
       );
       setAlertas(alertasEquipo);
     } catch (e) {
-      Alert.alert('Error', 'No se pudieron cargar los datos del equipo.');
+      showAlert('Error', 'No se pudieron cargar los datos del equipo.');
     } finally {
       setCargando(false);
     }
@@ -457,7 +458,7 @@ export default function DatosEquipoScreen() {
       const nombreFinal = `Reporte de temperaturas - ${nombreEquipo} - ${fecha}`;
       exportarReportePDF(html, nombreFinal);
     } catch (e: any) {
-      Alert.alert('Error PDF', e?.message ?? String(e));
+      showAlert('Error PDF', e?.message ?? String(e));
     } finally {
       setDescargando(false);
     }

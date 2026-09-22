@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, ActivityIndicator, Alert,
+  StyleSheet, ScrollView, ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { showAlert } from '@/components/AlertProvider';
 import { useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/theme';
 
@@ -22,15 +23,15 @@ export default function RegistroScreen() {
 
   async function handleRegistro() {
     if (!form.nombre || !form.apellido || !form.mail || !form.password) {
-      Alert.alert('Campos requeridos', 'Completá nombre, apellido, email y contraseña.');
+      showAlert('Campos requeridos', 'Completá nombre, apellido, email y contraseña.');
       return;
     }
     if (form.password !== form.confirmar) {
-      Alert.alert('Error', 'Las contraseñas no coinciden.');
+      showAlert('Error', 'Las contraseñas no coinciden.');
       return;
     }
     if (form.password.length < 6) {
-      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres.');
+      showAlert('Error', 'La contraseña debe tener al menos 6 caracteres.');
       return;
     }
     setCargando(true);
@@ -45,7 +46,7 @@ export default function RegistroScreen() {
     if (res.ok) {
       router.push({ pathname: '/(auth)/verificar-email', params: { mail: form.mail.trim().toLowerCase() } });
     } else {
-      Alert.alert('Error al registrarse', res.mensaje);
+      showAlert('Error al registrarse', res.mensaje);
     }
   }
 

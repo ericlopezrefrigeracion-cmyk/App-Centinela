@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { showAlert } from '@/components/AlertProvider';
 import { useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/theme';
 
@@ -19,16 +20,16 @@ export default function VerificarEmailScreen() {
 
   async function handleVerificar() {
     if (codigo.length < 4) {
-      Alert.alert('Error', 'Ingresá el código que recibiste por email.');
+      showAlert('Error', 'Ingresá el código que recibiste por email.');
       return;
     }
     setCargando(true);
     const res = await verificarEmail(mail as string, codigo.trim());
     if (res.ok) {
-      Alert.alert('Email verificado', 'Tu cuenta está activa. Iniciá sesión.');
+      showAlert('Email verificado', 'Tu cuenta está activa. Iniciá sesión.');
       router.replace('/(auth)/login');
     } else {
-      Alert.alert('Código incorrecto', res.mensaje);
+      showAlert('Código incorrecto', res.mensaje);
     }
     setCargando(false);
   }
@@ -37,7 +38,7 @@ export default function VerificarEmailScreen() {
     setReenviando(true);
     await reenviarVerificacion(mail as string);
     setReenviando(false);
-    Alert.alert('Código reenviado', 'Revisá tu email.');
+    showAlert('Código reenviado', 'Revisá tu email.');
   }
 
   return (

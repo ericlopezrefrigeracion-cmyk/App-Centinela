@@ -1,10 +1,11 @@
 import { Colors, FontSizes, FontWeights, Radius, Spacing } from '@/constants/theme';
 import { alertaService, datosService, equipoService } from '@/services/services';
 import { exportarReportePDF } from '@/services/exportarReportePDF';
+import { showAlert } from '@/components/AlertProvider';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert,
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text, TouchableOpacity,
@@ -87,7 +88,7 @@ export default function HistoricosScreen() {
         setEquipo(String(data[0].id));
       }
     } catch {
-      Alert.alert('Error', 'No se pudieron cargar los equipos.');
+      showAlert('Error', 'No se pudieron cargar los equipos.');
     } finally {
       setCargandoEq(false);
     }
@@ -211,11 +212,11 @@ export default function HistoricosScreen() {
 
   async function handleDescargar() {
     if (!equipoSeleccionado) {
-      Alert.alert('Seleccioná un equipo', 'Elegí el equipo del que querés descargar los datos.');
+      showAlert('Seleccioná un equipo', 'Elegí el equipo del que querés descargar los datos.');
       return;
     }
     if (!semanaSeleccionada) {
-      Alert.alert('Seleccioná una semana', 'Elegí la semana que querés descargar.');
+      showAlert('Seleccioná una semana', 'Elegí la semana que querés descargar.');
       return;
     }
 
@@ -247,7 +248,7 @@ export default function HistoricosScreen() {
       const agrupados = historicoData?.agrupados ?? [];
 
       if (agrupados.length === 0) {
-        Alert.alert('Sin datos', 'No hay datos registrados para este período.');
+        showAlert('Sin datos', 'No hay datos registrados para este período.');
         setDescargando(false);
         return;
       }
@@ -392,7 +393,7 @@ export default function HistoricosScreen() {
       const nombreFinal = `Reporte de temperaturas - ${nombreEquipo} - ${semanaSeleccionada}`;
       exportarReportePDF(html, nombreFinal);
     } catch {
-      Alert.alert('Error', 'No se pudo generar el reporte.');
+      showAlert('Error', 'No se pudo generar el reporte.');
     } finally {
       setDescargando(false);
     }

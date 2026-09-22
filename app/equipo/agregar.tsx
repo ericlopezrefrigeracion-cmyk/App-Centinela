@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, ActivityIndicator, Alert
+  StyleSheet, ScrollView, ActivityIndicator
 } from 'react-native';
 import { router } from 'expo-router';
 import { equipoService } from '@/services/services';
+import { showAlert } from '@/components/AlertProvider';
 import { Colors, FontSizes, FontWeights, Spacing, Radius } from '@/constants/theme';
 
 const C = Colors?.centinela ?? {
@@ -55,7 +56,7 @@ export default function AgregarEquipoScreen() {
         descripcion: form.descripcion?.trim() || undefined,
         ubicacion:   form.ubicacion?.trim()   || undefined,
       });
-      Alert.alert(
+      showAlert(
         'Equipo registrado',
         `El equipo "${form.nombre}" fue registrado y vinculado correctamente.`,
         [{ text: 'OK', onPress: () => router.back() }]
@@ -65,7 +66,7 @@ export default function AgregarEquipoScreen() {
       const msg = typeof detail === 'string' ? detail
         : Array.isArray(detail) ? detail.map((d: any) => d.msg).join(', ')
         : 'No se pudo registrar el equipo. Verificá el código.';
-      Alert.alert('Error', msg);
+      showAlert('Error', msg);
     } finally {
       setCargando(false);
     }
