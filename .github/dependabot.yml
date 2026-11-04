@@ -1,0 +1,31 @@
+version: 2
+updates:
+  # App Expo exportada a web (un solo package.json en la raíz).
+  # Cada PR corre las verificaciones del workflow de deploy (pull_request), sin desplegar; el deploy
+  # solo corre al aceptarlo en main.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Argentina/Buenos_Aires"
+    open-pull-requests-limit: 10
+    groups:
+      # Las menores y los parches van juntos en un solo PR para no llenar de PRs chicos; las mayores
+      # (con posibles cambios que rompen) quedan cada una en su PR para revisarlas a mano.
+      dependencias-menores:
+        update-types: ["minor", "patch"]
+    labels:
+      - "dependencias"
+
+  # Las versiones de las actions de los workflows (actions/checkout, appleboy/ssh-action, etc.).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Argentina/Buenos_Aires"
+    labels:
+      - "dependencias"

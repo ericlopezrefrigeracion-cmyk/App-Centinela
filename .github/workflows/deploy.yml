@@ -3,12 +3,15 @@ name: Deploy Centinela
 on:
   push:
     branches: [main]
+  # En cada PR (los de Dependabot, por ejemplo) corren las verificaciones y los tests, sin desplegar.
+  pull_request:
 
 permissions:
   contents: read
 
 concurrency:
-  group: deploy
+  # Un PR no cancela un deploy en curso de main (cada rama tiene su grupo).
+  group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -30,6 +33,7 @@ jobs:
         run: npm run build:web
 
       - name: Actualizar config en el VPS (docker-compose.yml, nginx.conf) y levantar servicios
+        if: github.event_name == 'push'
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -43,6 +47,7 @@ jobs:
             docker compose up -d
 
       - name: Subir dist/ al VPS
+        if: github.event_name == 'push'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -53,6 +58,7 @@ jobs:
           strip_components: 1
 
       - name: Verificar que el sitio responde
+        if: github.event_name == 'push'
         run: |
           sleep 5
           curl -fsS -o /dev/null https://clientes.telemet.com.ar
