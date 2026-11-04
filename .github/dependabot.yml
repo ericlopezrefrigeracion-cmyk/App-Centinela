@@ -16,6 +16,20 @@ updates:
       # (con posibles cambios que rompen) quedan cada una en su PR para revisarlas a mano.
       dependencias-menores:
         update-types: ["minor", "patch"]
+        # Expo y React Native van con la versión de Expo: se actualizan juntos con "npx expo install --fix".
+        exclude-patterns: ["expo", "expo-*", "@expo/*", "eslint-config-expo", "react", "react-dom", "react-native", "react-native-*", "@react-native/*", "@react-native-*/*"]
+    ignore:
+      # Mismo motivo: ninguna actualización de estos paquetes se aplica sola (romperían la app).
+      - dependency-name: "expo"
+      - dependency-name: "expo-*"
+      - dependency-name: "@expo/*"
+      - dependency-name: "eslint-config-expo"
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "react-native"
+      - dependency-name: "react-native-*"
+      - dependency-name: "@react-native/*"
+      - dependency-name: "@react-native-*/*"
     labels:
       - "dependencias"
 
