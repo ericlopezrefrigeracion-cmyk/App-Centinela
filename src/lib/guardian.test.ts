@@ -7,7 +7,8 @@ const deLaApp = Object.entries(fuentes).filter(([ruta]) => !ruta.endsWith('.test
 describe('hora y números (ESTANDARES E7)', () => {
   it('solo src/lib/formato.ts formatea fechas y números (Buenos Aires, 24 h, coma decimal)', () => {
     const fuera = deLaApp
-      .filter(([ruta]) => !ruta.endsWith('/lib/formato.ts'))
+      // Vite nombra los archivos relativos a este test: "./formato.ts"
+      .filter(([ruta]) => ruta !== './formato.ts' && !ruta.endsWith('/lib/formato.ts'))
       .filter(([, codigo]) => /\.toLocale\w*\(|\bIntl\./.test(codigo))
       .map(([ruta]) => ruta);
     expect(fuera).toEqual([]);
