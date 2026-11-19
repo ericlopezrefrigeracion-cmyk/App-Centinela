@@ -30,6 +30,10 @@ updates:
       - dependency-name: "react-native-*"
       - dependency-name: "@react-native/*"
       - dependency-name: "@react-native-*/*"
+      # TypeScript 7 (compilador nativo) no trae la API de JavaScript que usa Expo al exportar: rompe el build
+      # (19/11/2026, PR #14). Se vuelve a habilitar cuando Expo lo soporte; las 5.x y 6.x siguen llegando.
+      - dependency-name: "typescript"
+        versions: [">=7.0.0"]
     labels:
       - "dependencias"
 
