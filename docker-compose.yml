@@ -3,11 +3,14 @@ services:
     container_name: nginx
     image: nginx:1.27-alpine
     restart: unless-stopped
+    # La configuración se monta como carpeta (no archivo suelto): así el deploy la actualiza con git y
+    # un "nginx -s reload" la toma, sin reiniciar el contenedor.
+    command: ["nginx", "-c", "/etc/nginx/centinela/nginx.conf", "-g", "daemon off;"]
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx:/etc/nginx/centinela:ro
       - ./dist:/var/www/html:ro
       - certbot_data:/etc/letsencrypt:ro
       - certbot_www:/var/www/certbot:ro

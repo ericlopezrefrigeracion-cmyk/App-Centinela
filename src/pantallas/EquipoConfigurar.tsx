@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { showAlert } from '../componentes/AlertProvider';
 import { volver } from '../componentes/navegacion';
-import { Campo, Desplazable, Interruptor, Spinner, Tocable } from '../componentes/ui';
+import { Boton, Campo, campoTexto, Desplazable, Interruptor, Spinner, Tocable, tarjeta } from '../componentes/ui';
 import { avisarCambioEquipos, mismoId } from '../lib/equipos';
 import { e, type Estilo } from '../lib/estilo';
 import { equipoService } from '../lib/servicios';
-import { C, FontSizes, FontWeights, Radius, Spacing } from '../lib/tema';
+import { C, FontSizes, FontWeights, Radius, Spacing, TOQUE } from '../lib/tema';
 import { cambiarSigno, formDesdeEquipo, normalizarTemperatura, parametrosParaGuardar, validarConfiguracion, type Errores, type FormConfiguracion } from '../lib/validaciones';
 
 const FORM_VACIO: FormConfiguracion = {
@@ -84,7 +84,7 @@ export default function EquipoConfigurar({ id }: { id: string }) {
   if (cargando) {
     return (
       <div style={e(s.centrado)}>
-        <Spinner tamano="large" color={C.primary} />
+        <Spinner tamano="large" />
         <span style={e(s.cargandoText)}>Cargando configuración...</span>
       </div>
     );
@@ -99,7 +99,7 @@ export default function EquipoConfigurar({ id }: { id: string }) {
       <div style={e(s.grupo)}>
         <div style={e(s.campo)}>
           <span style={e(s.label)}>Nombre <span style={e(s.requerido)}>*</span></span>
-          <Campo estilo={[s.input, !!errores.nombre && s.inputError]} valor={form.nombre} onCambio={(t) => setField('nombre', t)} maxLength={30} placeholder="Nombre del equipo" colorPlaceholder={C.textMuted} />
+          <Campo estilo={[s.input, !!errores.nombre && s.inputError]} valor={form.nombre} onCambio={(t) => setField('nombre', t)} maxLength={30} placeholder="Nombre del equipo" />
           {error('nombre')}
         </div>
 
@@ -107,7 +107,7 @@ export default function EquipoConfigurar({ id }: { id: string }) {
 
         <div style={e(s.campo)}>
           <span style={e(s.label)}>Descripción</span>
-          <Campo estilo={[s.input, s.inputMultiline, !!errores.descripcion && s.inputError]} valor={form.descripcion} onCambio={(t) => setField('descripcion', t)} placeholder="Descripción opcional" colorPlaceholder={C.textMuted} multilinea lineas={2} maxLength={50} />
+          <Campo estilo={[s.input, s.inputMultiline, !!errores.descripcion && s.inputError]} valor={form.descripcion} onCambio={(t) => setField('descripcion', t)} placeholder="Descripción opcional" multilinea lineas={2} maxLength={50} />
           {error('descripcion')}
         </div>
 
@@ -115,7 +115,7 @@ export default function EquipoConfigurar({ id }: { id: string }) {
 
         <div style={e(s.campo)}>
           <span style={e(s.label)}>Ubicación</span>
-          <Campo estilo={[s.input, !!errores.ubicacion && s.inputError]} valor={form.ubicacion} onCambio={(t) => setField('ubicacion', t)} placeholder="Ubicación del equipo" colorPlaceholder={C.textMuted} maxLength={40} />
+          <Campo estilo={[s.input, !!errores.ubicacion && s.inputError]} valor={form.ubicacion} onCambio={(t) => setField('ubicacion', t)} placeholder="Ubicación del equipo" maxLength={40} />
           {error('ubicacion')}
         </div>
       </div>
@@ -166,7 +166,7 @@ export default function EquipoConfigurar({ id }: { id: string }) {
             <span style={e(s.switchLabel)}>Alertas activas</span>
             <span style={e(s.switchSub)}>Registrar alertas cuando la temperatura esté fuera de rango</span>
           </div>
-          <Interruptor valor={form.alertasActivas} onCambio={(v) => setField('alertasActivas', v)} colorPista={{ false: C.border, true: C.primaryBg }} />
+          <Interruptor valor={form.alertasActivas} onCambio={(v) => setField('alertasActivas', v)} etiqueta="Alertas activas" />
         </div>
 
         <div style={e(s.separador)} />
@@ -176,7 +176,7 @@ export default function EquipoConfigurar({ id }: { id: string }) {
             <span style={e(s.switchLabel)}>Reportes semanales</span>
             <span style={e(s.switchSub)}>Recibir un resumen semanal con el historial de temperatura por email</span>
           </div>
-          <Interruptor valor={form.reportesSemanales} onCambio={(v) => setField('reportesSemanales', v)} colorPista={{ false: C.border, true: C.primaryBg }} />
+          <Interruptor valor={form.reportesSemanales} onCambio={(v) => setField('reportesSemanales', v)} etiqueta="Reportes semanales" />
         </div>
 
         <div style={e(s.separador)} />
@@ -184,27 +184,22 @@ export default function EquipoConfigurar({ id }: { id: string }) {
         <div style={e(s.campo)}>
           <span style={e(s.label)}>Retardo para el aviso (minutos)</span>
           <span style={e(s.labelSub)}>Tiempo que debe permanecer fuera de rango antes de enviar la alerta</span>
-          <Campo estilo={[s.input, !!errores.retardo && s.inputError]} valor={form.retardo} onCambio={(t) => setField('retardo', t)} placeholder="5" colorPlaceholder={C.textMuted} inputMode="numeric" />
+          <Campo estilo={[s.input, !!errores.retardo && s.inputError]} valor={form.retardo} onCambio={(t) => setField('retardo', t)} placeholder="5" inputMode="numeric" />
           {error('retardo')}
         </div>
       </div>
 
       {/* Botones */}
-      <Tocable estilo={[s.btnPrimario, guardando && s.btnDisabled]} onPress={handleGuardar} disabled={guardando} opacidadActiva={0.85}>
-        {guardando ? <Spinner color={C.black} /> : <span style={e(s.btnPrimarioText)}>Guardar cambios</span>}
-      </Tocable>
-
-      <Tocable estilo={s.btnSecundario} onPress={() => volver(navigate)} opacidadActiva={0.75}>
-        <span style={e(s.btnSecundarioText)}>Cancelar</span>
-      </Tocable>
+      <div style={e(s.botones)}>
+        <Boton onPress={handleGuardar} cargando={guardando}>Guardar cambios</Boton>
+        <Boton variante="secundario" onPress={() => volver(navigate)}>Cancelar</Boton>
+      </div>
 
       {/* Zona de peligro */}
       <div style={e(s.zonaEliminacion)}>
         <span style={e(s.zonaEliminacionTitulo)}>Zona de peligro</span>
         <span style={e(s.zonaEliminacionSub)}>Esta acción eliminará el equipo de tu cuenta de forma permanente.</span>
-        <Tocable estilo={s.btnEliminar} onPress={handleEliminar} opacidadActiva={0.85}>
-          <span style={e(s.btnEliminarText)}>Eliminar equipo</span>
-        </Tocable>
+        <Boton variante="peligro" icono="basura" onPress={handleEliminar}>Eliminar equipo</Boton>
       </div>
 
       <div style={{ height: Spacing.xxl }} />
@@ -219,11 +214,11 @@ export default function EquipoConfigurar({ id }: { id: string }) {
  */
 function CampoTemperatura({ valor, onCambio, placeholder, error }: { valor: string; onCambio: (t: string) => void; placeholder: string; error: boolean }) {
   return (
-    <div style={{ display: 'flex', gap: Spacing.xs }}>
+    <div style={{ display: 'flex', flexDirection: 'row', gap: Spacing.xs }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <Campo estilo={[s.input, error && s.inputError]} valor={valor} onCambio={(t) => onCambio(normalizarTemperatura(t))} placeholder={placeholder} colorPlaceholder={C.textMuted} inputMode="decimal" />
+        <Campo estilo={[s.input, error && s.inputError]} valor={valor} onCambio={(t) => onCambio(normalizarTemperatura(t))} placeholder={placeholder} inputMode="decimal" />
       </div>
-      <Tocable estilo={s.botonSigno} onPress={() => onCambio(cambiarSigno(valor))} etiqueta="Cambiar signo">
+      <Tocable estilo={s.botonSigno} onPress={() => onCambio(cambiarSigno(valor))} etiqueta="Cambiar signo" opacidadActiva={0.6}>
         <span style={e(s.botonSignoTexto)}>±</span>
       </Tocable>
     </div>
@@ -232,34 +227,28 @@ function CampoTemperatura({ valor, onCambio, placeholder, error }: { valor: stri
 
 const s: Record<string, Estilo> = {
   container: { flex: 1, backgroundColor: C.background },
-  scroll: { padding: Spacing.lg, maxWidth: 600, width: '100%', alignSelf: 'center' },
+  scroll: { padding: Spacing.md, paddingTop: 0, maxWidth: 600, width: '100%', alignSelf: 'center' },
   centrado: { flex: 1, backgroundColor: C.background, justifyContent: 'center', alignItems: 'center', gap: Spacing.md },
   cargandoText: { color: C.textSub, fontSize: FontSizes.sm },
-  grupTitulo: { color: C.textSub, fontSize: FontSizes.xs, fontWeight: FontWeights.bold, letterSpacing: 1, textTransform: 'uppercase', marginBottom: Spacing.sm, marginTop: Spacing.md },
-  grupo: { backgroundColor: C.card, borderRadius: Radius.lg, borderWidth: 1, borderColor: C.border, padding: Spacing.md, marginBottom: Spacing.sm },
-  separador: { height: 1, backgroundColor: C.border, marginVertical: Spacing.sm },
+  grupTitulo: { color: C.textSub, fontSize: FontSizes.sm, fontWeight: FontWeights.semibold, marginBottom: Spacing.sm, marginTop: Spacing.md, paddingHorizontal: 4 },
+  grupo: { ...tarjeta, padding: Spacing.md, marginBottom: Spacing.sm },
+  separador: { height: 1, backgroundColor: C.border, marginVertical: 12 },
   campo: { marginBottom: 4 },
   filaDoble: { flexDirection: 'row' },
-  label: { color: C.text, fontSize: FontSizes.sm, fontWeight: FontWeights.medium, marginBottom: 4 },
-  labelSub: { color: C.textMuted, fontSize: FontSizes.xs, marginBottom: Spacing.xs },
-  requerido: { color: C.critico },
-  input: { backgroundColor: C.cardAlt, borderWidth: 1, borderColor: C.border, borderRadius: Radius.md, padding: Spacing.sm + 4, color: C.text, fontSize: FontSizes.md },
-  inputError: { borderColor: C.critico },
-  botonSigno: { backgroundColor: C.cardAlt, borderWidth: 1, borderColor: C.border, borderRadius: Radius.md, width: 44, alignItems: 'center', justifyContent: 'center' },
+  label: { color: C.text, fontSize: FontSizes.sm, fontWeight: FontWeights.medium, marginBottom: 6 },
+  labelSub: { color: C.textSub, fontSize: FontSizes.xs, marginTop: -2, marginBottom: 8, lineHeight: 17 },
+  requerido: { color: C.rojo },
+  input: { ...campoTexto },
+  inputError: { borderColor: C.rojo },
+  botonSigno: { backgroundColor: C.control, borderWidth: 1, borderColor: C.borderControl, borderRadius: Radius.md, width: TOQUE, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   botonSignoTexto: { color: C.text, fontSize: FontSizes.lg, fontWeight: FontWeights.bold },
   inputMultiline: { height: 72, verticalAlign: 'top' },
-  errorText: { color: C.critico, fontSize: FontSizes.xs, marginTop: 4 },
-  switchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: 4 },
+  errorText: { color: C.rojo, fontSize: FontSizes.xs, marginTop: 4 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   switchLabel: { color: C.text, fontSize: FontSizes.md, fontWeight: FontWeights.medium, marginBottom: 2 },
-  switchSub: { color: C.textSub, fontSize: FontSizes.xs, lineHeight: 16 },
-  btnPrimario: { backgroundColor: C.primary, borderRadius: Radius.full, padding: Spacing.md, alignItems: 'center', marginTop: Spacing.md, marginBottom: Spacing.sm },
-  btnDisabled: { opacity: 0.6 },
-  btnPrimarioText: { color: C.black, fontSize: FontSizes.md, fontWeight: FontWeights.bold },
-  btnSecundario: { borderRadius: Radius.full, padding: Spacing.md, alignItems: 'center', borderWidth: 1, borderColor: C.border, marginBottom: Spacing.xl },
-  btnSecundarioText: { color: C.textSub, fontSize: FontSizes.md },
-  zonaEliminacion: { borderWidth: 1, borderColor: 'rgba(255,68,68,0.3)', borderRadius: Radius.lg, padding: Spacing.md, backgroundColor: 'rgba(255,68,68,0.05)' },
-  zonaEliminacionTitulo: { color: C.critico, fontSize: FontSizes.sm, fontWeight: FontWeights.bold, marginBottom: 4 },
+  switchSub: { color: C.textSub, fontSize: FontSizes.xs, lineHeight: 17 },
+  botones: { gap: Spacing.sm, marginTop: Spacing.lg, marginBottom: Spacing.xl },
+  zonaEliminacion: { ...tarjeta, padding: Spacing.md },
+  zonaEliminacionTitulo: { color: C.rojo, fontSize: FontSizes.sm, fontWeight: FontWeights.bold, marginBottom: 4 },
   zonaEliminacionSub: { color: C.textSub, fontSize: FontSizes.sm, marginBottom: Spacing.md, lineHeight: 20 },
-  btnEliminar: { borderWidth: 1, borderColor: C.critico, borderRadius: Radius.full, padding: Spacing.sm + 4, alignItems: 'center' },
-  btnEliminarText: { color: C.critico, fontSize: FontSizes.md, fontWeight: FontWeights.bold },
 };

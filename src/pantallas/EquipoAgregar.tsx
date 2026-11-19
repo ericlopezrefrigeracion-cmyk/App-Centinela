@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { showAlert } from '../componentes/AlertProvider';
 import { volver } from '../componentes/navegacion';
-import { Campo, Desplazable, Spinner, Tocable } from '../componentes/ui';
+import { Icono } from '../componentes/iconos';
+import { Boton, Campo, campoTexto, Desplazable, tarjeta } from '../componentes/ui';
 import { avisarCambioEquipos } from '../lib/equipos';
 import { e, type Estilo } from '../lib/estilo';
 import { equipoService } from '../lib/servicios';
@@ -49,46 +50,45 @@ export default function EquipoAgregar() {
     <Desplazable estilo={s.container} estiloContenido={s.scroll}>
       <span style={e(s.descripcion)}>Ingresá los datos del nuevo equipo Centinela para vincularlo a tu cuenta.</span>
 
-      <div style={e(s.campo)}>
-        <span style={e(s.label)}>Código del equipo <span style={e(s.requerido)}>*</span></span>
-        <span style={e(s.labelSub)}>El código impreso en el dispositivo Centinela</span>
-        <Campo estilo={[s.input, !!errores.id && s.inputError]} placeholder="Ej: EQUIPO_001" colorPlaceholder={C.textMuted} valor={form.id} onCambio={(t) => setField('id', t)} autoCapitalize="characters" />
-        {errores.id ? <span style={e(s.errorText)}>{errores.id}</span> : null}
-      </div>
+      <div style={e(s.formulario)}>
+        <div style={e(s.campo)}>
+          <span style={e(s.label)}>Código del equipo <span style={e(s.requerido)}>*</span></span>
+          <span style={e(s.labelSub)}>El código impreso en el dispositivo Centinela</span>
+          <Campo estilo={[s.input, !!errores.id && s.inputError]} placeholder="Ej: EQUIPO_001" valor={form.id} onCambio={(t) => setField('id', t)} autoCapitalize="characters" />
+          {errores.id ? <span style={e(s.errorText)}>{errores.id}</span> : null}
+        </div>
 
-      <div style={e(s.campo)}>
-        <span style={e(s.label)}>Nombre <span style={e(s.requerido)}>*</span></span>
-        <span style={e(s.labelSub)}>Nombre descriptivo para identificar el equipo</span>
-        <Campo estilo={[s.input, !!errores.nombre && s.inputError]} placeholder="Ej: Cámara frigorífica principal" colorPlaceholder={C.textMuted} valor={form.nombre} onCambio={(t) => setField('nombre', t)} />
-        {errores.nombre ? <span style={e(s.errorText)}>{errores.nombre}</span> : null}
-      </div>
+        <div style={e(s.campo)}>
+          <span style={e(s.label)}>Nombre <span style={e(s.requerido)}>*</span></span>
+          <span style={e(s.labelSub)}>Nombre descriptivo para identificar el equipo</span>
+          <Campo estilo={[s.input, !!errores.nombre && s.inputError]} placeholder="Ej: Cámara frigorífica principal" valor={form.nombre} onCambio={(t) => setField('nombre', t)} />
+          {errores.nombre ? <span style={e(s.errorText)}>{errores.nombre}</span> : null}
+        </div>
 
-      <div style={e(s.campo)}>
-        <span style={e(s.label)}>Descripción</span>
-        <Campo estilo={[s.input, s.inputMultiline]} placeholder="Descripción opcional del equipo..." colorPlaceholder={C.textMuted} valor={form.descripcion} onCambio={(t) => setField('descripcion', t)} multilinea lineas={3} />
-      </div>
+        <div style={e(s.campo)}>
+          <span style={e(s.label)}>Descripción</span>
+          <Campo estilo={[s.input, s.inputMultiline]} placeholder="Descripción opcional del equipo..." valor={form.descripcion} onCambio={(t) => setField('descripcion', t)} multilinea lineas={3} />
+        </div>
 
-      <div style={e(s.campo)}>
-        <span style={e(s.label)}>Ubicación</span>
-        <span style={e(s.labelSub)}>Dirección o descripción del lugar donde está instalado</span>
-        <Campo estilo={s.input} placeholder="Ej: Depósito planta baja, sector B" colorPlaceholder={C.textMuted} valor={form.ubicacion} onCambio={(t) => setField('ubicacion', t)} />
+        <div style={e(s.campo)}>
+          <span style={e(s.label)}>Ubicación</span>
+          <span style={e(s.labelSub)}>Dirección o descripción del lugar donde está instalado</span>
+          <Campo estilo={s.input} placeholder="Ej: Depósito planta baja, sector B" valor={form.ubicacion} onCambio={(t) => setField('ubicacion', t)} />
+        </div>
       </div>
 
       <div style={e(s.infoBox)}>
-        <span style={e(s.infoIcono)}>ℹ️</span>
+        <Icono nombre="info" tamano={18} color={C.textSub} />
         <span style={e(s.infoText)}>
           Una vez agregado el equipo, podrás configurar los rangos de temperatura,
           alertas y otros parámetros desde la pantalla de configuración.
         </span>
       </div>
 
-      <Tocable estilo={[s.btnPrimario, cargando && s.btnDisabled]} onPress={handleAgregar} disabled={cargando} opacidadActiva={0.85}>
-        {cargando ? <Spinner color={C.black} /> : <span style={e(s.btnPrimarioText)}>Agregar equipo</span>}
-      </Tocable>
-
-      <Tocable estilo={s.btnSecundario} onPress={() => volver(navigate)} opacidadActiva={0.75}>
-        <span style={e(s.btnSecundarioText)}>Cancelar</span>
-      </Tocable>
+      <div style={e(s.botones)}>
+        <Boton icono="mas" onPress={handleAgregar} cargando={cargando}>Agregar equipo</Boton>
+        <Boton variante="secundario" onPress={() => volver(navigate)}>Cancelar</Boton>
+      </div>
 
       <div style={{ height: Spacing.xxl }} />
     </Desplazable>
@@ -97,25 +97,18 @@ export default function EquipoAgregar() {
 
 const s: Record<string, Estilo> = {
   container: { flex: 1, backgroundColor: C.background },
-  scroll: { padding: Spacing.lg, maxWidth: 600, width: '100%', alignSelf: 'center' },
-  descripcion: { color: C.textSub, fontSize: FontSizes.sm, lineHeight: 20, marginBottom: Spacing.lg },
+  scroll: { padding: Spacing.md, paddingTop: 0, maxWidth: 600, width: '100%', alignSelf: 'center' },
+  descripcion: { color: C.textSub, fontSize: FontSizes.sm, lineHeight: 20, marginBottom: Spacing.md, paddingHorizontal: 4 },
+  formulario: { ...tarjeta, padding: Spacing.md, marginBottom: Spacing.md },
   campo: { marginBottom: Spacing.md },
-  label: { color: C.text, fontSize: FontSizes.sm, fontWeight: FontWeights.medium, marginBottom: 2 },
-  labelSub: { color: C.textMuted, fontSize: FontSizes.xs, marginBottom: Spacing.xs },
-  requerido: { color: C.critico },
-  input: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: Radius.md, padding: Spacing.md, color: C.text, fontSize: FontSizes.md },
-  inputError: { borderColor: C.critico },
-  inputMultiline: { height: 80, verticalAlign: 'top' },
-  errorText: { color: C.critico, fontSize: FontSizes.xs, marginTop: Spacing.xs },
-  infoBox: {
-    flexDirection: 'row', backgroundColor: C.primaryBg, borderRadius: Radius.md, borderWidth: 1, borderColor: 'rgba(126,211,33,0.25)',
-    padding: Spacing.md, gap: Spacing.sm, marginBottom: Spacing.lg, alignItems: 'flex-start',
-  },
-  infoIcono: { fontSize: 16 },
+  label: { color: C.text, fontSize: FontSizes.sm, fontWeight: FontWeights.medium, marginBottom: 4 },
+  labelSub: { color: C.textSub, fontSize: FontSizes.xs, marginBottom: 8, lineHeight: 17 },
+  requerido: { color: C.rojo },
+  input: { ...campoTexto },
+  inputError: { borderColor: C.rojo },
+  inputMultiline: { height: 88, verticalAlign: 'top' },
+  errorText: { color: C.rojo, fontSize: FontSizes.xs, marginTop: Spacing.xs },
+  infoBox: { ...tarjeta, flexDirection: 'row', borderRadius: Radius.md, padding: Spacing.md, gap: 12, marginBottom: Spacing.lg, alignItems: 'flex-start' },
   infoText: { color: C.textSub, fontSize: FontSizes.sm, flex: 1, lineHeight: 20 },
-  btnPrimario: { backgroundColor: C.primary, borderRadius: Radius.full, padding: Spacing.md, alignItems: 'center', marginBottom: Spacing.sm },
-  btnDisabled: { opacity: 0.6 },
-  btnPrimarioText: { color: C.black, fontSize: FontSizes.md, fontWeight: FontWeights.bold },
-  btnSecundario: { borderRadius: Radius.full, padding: Spacing.md, alignItems: 'center', borderWidth: 1, borderColor: C.border },
-  btnSecundarioText: { color: C.textSub, fontSize: FontSizes.md },
+  botones: { gap: Spacing.sm },
 };

@@ -43,9 +43,9 @@ describe('estado del equipo', () => {
   it('sin última conexión está desconectado', () => {
     expect(estadoEquipo({ ultimaConexion: null, estado_temp: 'normal' }, AHORA)).toBe('desconectado');
   });
-  it('etiquetas con tilde', () => {
+  it('etiquetas con tilde y mayúscula solo al inicio', () => {
     expect(['normal', 'atencion', 'critico', 'desconectado'].map((x) => labelEstado(x as any)))
-      .toEqual(['NORMAL', 'ATENCIÓN', 'CRÍTICO', 'DESCONECTADO']);
+      .toEqual(['Normal', 'Atención', 'Crítico', 'Desconectado']);
   });
 });
 
@@ -106,9 +106,10 @@ describe('mapeo de GET /app/alertas', () => {
       ],
       [{ id: 'EQ1', nombre: 'Cámara' }],
     );
+    // La descripción ya no repite el tipo: la temperatura si viene; si no, nada
     expect(alertas.map((a) => [a.equipo, a.descripcion, a.vista])).toEqual([
-      ['Cámara', 'temperatura — 8.4°C', false],
-      ['Equipo desconocido', 'desconexion', true],
+      ['Cámara', '8,4 °C', false],
+      ['Equipo desconocido', '', true],
     ]);
   });
 

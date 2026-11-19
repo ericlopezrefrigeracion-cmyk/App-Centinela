@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { showAlert } from '../componentes/AlertProvider';
-import { Desplazable, Spinner, Tocable } from '../componentes/ui';
+import { Icono } from '../componentes/iconos';
+import { TituloPestana } from '../componentes/navegacion';
+import { Boton, Desplazable, Spinner, Tocable, tarjeta } from '../componentes/ui';
 import { mismoId, type EquipoApi } from '../lib/equipos';
 import { e, type Estilo } from '../lib/estilo';
 import { generarSemanas, rangoSemana } from '../lib/graficos';
-import { exportarReportePDF, htmlReporteSemanal, nombreReporteSemanal } from '../lib/reportes';
+import { abrirVentanaReporte, exportarReportePDF, htmlReporteSemanal, nombreReporteSemanal } from '../lib/reportes';
 import { alertaService, datosService, equipoService } from '../lib/servicios';
 import { C, FontSizes, FontWeights, Radius, Spacing } from '../lib/tema';
 
@@ -46,6 +48,16 @@ export default function Historicos() {
       return;
     }
 
+    // La pestaña del reporte se abre ya, con el toque: si se abre después de consultar la API,
+    // Safari (iPhone) y Chrome la bloquean como ventana emergente.
+    let ventana: Window;
+    try {
+      ventana = abrirVentanaReporte();
+    } catch (err) {
+      showAlert('No se pudo abrir el reporte', err instanceof Error ? err.message : String(err));
+      return;
+    }
+
     try {
       setDescargando(true);
       const esSemanaActual = semanaSeleccionada === semanas[0]?.fechaInicio;
@@ -58,6 +70,7 @@ export default function Historicos() {
 
       const agrupados = historicoData?.agrupados ?? [];
       if (agrupados.length === 0) {
+        ventana.close();
         showAlert('Sin datos', 'No hay datos registrados para este período.');
         setDescargando(false);
         return;
@@ -81,9 +94,10 @@ export default function Historicos() {
       const equipo = equipos.find((eq) => mismoId(eq.id, equipoSeleccionado));
       const semana = semanas.find((sm) => sm.fechaInicio === semanaSeleccionada);
 
-      const html = htmlReporteSemanal({ equipo, datos, alertas, etiquetaSemana: semana?.label ?? '', fechaInicio: semanaSeleccionada });
-      exportarReportePDF(html, nombreReporteSemanal(equipo?.nombre, semanaSeleccionada));
+      const html = htmlReporteSemanal({ equipo, datos, alertas, etiquetaSemana: semana?.label ?? '', fechaInicio: semanaSeleccionada, desde, hasta });
+      exportarReportePDF(html, nombreReporteSemanal(equipo?.nombre, semanaSeleccionada), ventana);
     } catch {
+      ventana.close();
       showAlert('Error', 'No se pudo generar el reporte.');
     } finally {
       setDescargando(false);
@@ -93,76 +107,67 @@ export default function Historicos() {
   if (cargandoEquipos) {
     return (
       <div style={e(s.centrado)}>
-        <Spinner tamano="large" color={C.primary} />
+        <Spinner tamano="large" />
         <span style={e(s.cargandoText)}>Cargando...</span>
       </div>
     );
   }
 
+  /** Opción de una lista donde se elige una sola (equipo o semana). */
+  const opcion = (clave: string, texto: string, activa: boolean, elegir: () => void) => (
+    <Tocable key={clave} estilo={[s.opcionBtn, activa && s.opcionBtnActivo]} onPress={elegir} opacidadActiva={0.6}>
+      <span style={e(s.opcionText, activa && s.opcionTextActivo)}>{texto}</span>
+      {activa && <Icono nombre="check" tamano={18} color={C.verde} />}
+    </Tocable>
+  );
+
   return (
-    <Desplazable estilo={s.container} estiloContenido={s.scroll}>
-      <span style={e(s.descripcion)}>Seleccioná el equipo y la semana que querés descargar como PDF.</span>
+    <div style={e(s.container)}>
+      <TituloPestana titulo="Históricos" anchoMaximo={600} />
+      <Desplazable estiloContenido={s.scroll}>
+        <span style={e(s.descripcion)}>Seleccioná el equipo y la semana que querés descargar como PDF.</span>
 
-      <span style={e(s.grupTitulo)}>Equipo</span>
-      <div style={e(s.opciones)}>
-        {equipos.map((eq) => {
-          const activo = String(eq.id) === equipoSeleccionado;
-          return (
-            <Tocable key={String(eq.id)} estilo={[s.opcionBtn, activo && s.opcionBtnActivo]} onPress={() => setEquipo(String(eq.id))} opacidadActiva={0.75}>
-              <span style={e(s.opcionText, activo && s.opcionTextActivo)}>{eq.nombre}</span>
-            </Tocable>
-          );
-        })}
-      </div>
+        <span style={e(s.grupTitulo)}>Equipo</span>
+        <div style={e(s.opciones)}>
+          {equipos.map((eq) => opcion(String(eq.id), eq.nombre, String(eq.id) === equipoSeleccionado, () => setEquipo(String(eq.id))))}
+        </div>
 
-      <span style={e(s.grupTitulo)}>Semana</span>
-      <div style={e(s.opciones)}>
-        {semanas.map((sem) => {
-          const activa = sem.fechaInicio === semanaSeleccionada;
-          return (
-            <Tocable key={sem.fechaInicio} estilo={[s.opcionBtn, activa && s.opcionBtnActivo]} onPress={() => setSemana(sem.fechaInicio)} opacidadActiva={0.75}>
-              <span style={e(s.opcionText, activa && s.opcionTextActivo)}>{sem.label}</span>
-            </Tocable>
-          );
-        })}
-      </div>
+        <span style={e(s.grupTitulo)}>Semana</span>
+        <div style={e(s.opciones)}>
+          {semanas.map((sem) => opcion(sem.fechaInicio, sem.label, sem.fechaInicio === semanaSeleccionada, () => setSemana(sem.fechaInicio)))}
+        </div>
 
-      <div style={e(s.infoBox)}>
-        <span style={e(s.infoIcono)}>📄</span>
-        <span style={e(s.infoText)}>
-          El reporte incluye todas las lecturas de temperatura y alertas
-          de la semana seleccionada en formato PDF.
-        </span>
-      </div>
+        <div style={e(s.infoBox)}>
+          <Icono nombre="info" tamano={18} color={C.textSub} />
+          <span style={e(s.infoText)}>
+            El reporte incluye todas las lecturas de temperatura y alertas
+            de la semana seleccionada en formato PDF.
+          </span>
+        </div>
 
-      <Tocable estilo={[s.btnDescargar, descargando && s.btnDisabled]} onPress={handleDescargar} disabled={descargando} opacidadActiva={0.85}>
-        {descargando ? <Spinner color={C.black} /> : <span style={e(s.btnDescargarText)}>📥  Descargar PDF</span>}
-      </Tocable>
+        <Boton icono="descarga" onPress={handleDescargar} cargando={descargando}>Descargar PDF</Boton>
 
-      <div style={{ height: Spacing.xxl }} />
-    </Desplazable>
+        <div style={{ height: Spacing.xxl }} />
+      </Desplazable>
+    </div>
   );
 }
 
 const s: Record<string, Estilo> = {
   container: { flex: 1, backgroundColor: C.background },
-  scroll: { padding: Spacing.lg, maxWidth: 600, width: '100%', alignSelf: 'center' },
+  scroll: { paddingHorizontal: Spacing.md, maxWidth: 600, width: '100%', alignSelf: 'center' },
   centrado: { flex: 1, backgroundColor: C.background, justifyContent: 'center', alignItems: 'center', gap: Spacing.md },
   cargandoText: { color: C.textSub, fontSize: FontSizes.sm },
-  descripcion: { color: C.textSub, fontSize: FontSizes.sm, lineHeight: 20, marginBottom: Spacing.lg },
-  grupTitulo: { color: C.textSub, fontSize: FontSizes.xs, fontWeight: FontWeights.bold, letterSpacing: 1, textTransform: 'uppercase', marginBottom: Spacing.sm },
-  opciones: { gap: Spacing.xs, marginBottom: Spacing.lg },
-  opcionBtn: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: Radius.md, padding: Spacing.md },
-  opcionBtnActivo: { backgroundColor: C.primaryBg, borderColor: C.primary },
-  opcionText: { color: C.textSub, fontSize: FontSizes.md },
-  opcionTextActivo: { color: C.primary, fontWeight: FontWeights.bold },
-  infoBox: {
-    flexDirection: 'row', backgroundColor: C.primaryBg, borderRadius: Radius.md, borderWidth: 1, borderColor: 'rgba(126,211,33,0.25)',
-    padding: Spacing.md, gap: Spacing.sm, marginBottom: Spacing.lg, alignItems: 'flex-start',
+  descripcion: { color: C.textSub, fontSize: FontSizes.sm, lineHeight: 20, marginBottom: Spacing.md, paddingHorizontal: 4 },
+  grupTitulo: { color: C.textSub, fontSize: FontSizes.sm, fontWeight: FontWeights.semibold, marginBottom: Spacing.sm, paddingHorizontal: 4 },
+  opciones: { ...tarjeta, marginBottom: Spacing.lg, overflow: 'hidden' },
+  opcionBtn: {
+    minHeight: 48, paddingHorizontal: Spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+    borderTopWidth: 1, borderTopColor: C.border, marginTop: -1,
   },
-  infoIcono: { fontSize: 16 },
+  opcionBtnActivo: { backgroundColor: C.verdeFondo },
+  opcionText: { color: C.text, fontSize: FontSizes.md },
+  opcionTextActivo: { color: C.verde, fontWeight: FontWeights.semibold },
+  infoBox: { ...tarjeta, flexDirection: 'row', padding: Spacing.md, gap: 12, marginBottom: Spacing.lg, alignItems: 'flex-start', borderRadius: Radius.md },
   infoText: { color: C.textSub, fontSize: FontSizes.sm, flex: 1, lineHeight: 20 },
-  btnDescargar: { backgroundColor: C.primary, borderRadius: Radius.full, padding: Spacing.md, alignItems: 'center' },
-  btnDisabled: { opacity: 0.6 },
-  btnDescargarText: { color: C.black, fontSize: FontSizes.md, fontWeight: FontWeights.bold },
 };

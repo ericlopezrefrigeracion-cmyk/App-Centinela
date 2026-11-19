@@ -1,4 +1,4 @@
-// Lógica de equipos: mapeo de la respuesta de la API, estado y señal.
+// Lógica de equipos: mapeo de la respuesta de la API, estado, señal, orden y resumen.
 import { C } from './tema';
 
 export type EstadoEquipo = 'normal' | 'atencion' | 'critico' | 'desconectado';
@@ -72,33 +72,66 @@ export function prepararEquipos(equipos: EquipoApi[], ahora: number = Date.now()
   return equipos.map((e) => ({ ...e, senal: nivelSenal(e.rssi), estado: estadoEquipo(e as any, ahora) }));
 }
 
-export function colorEstado(estado: EstadoEquipo): string {
-  const mapa: Record<EstadoEquipo, string> = {
-    normal: C.normal,
-    atencion: C.alerta,
-    critico: C.critico,
-    desconectado: C.desconectado,
+/** Colores de cada estado: texto, punto/barra y fondo suave (variables del tema). */
+export function colorEstado(estado: EstadoEquipo): { texto: string; punto: string; fondo: string } {
+  const mapa: Record<EstadoEquipo, { texto: string; punto: string; fondo: string }> = {
+    normal: { texto: C.verde, punto: C.verdePunto, fondo: C.verdeFondo },
+    atencion: { texto: C.ambar, punto: C.ambarPunto, fondo: C.ambarFondo },
+    critico: { texto: C.rojo, punto: C.rojoPunto, fondo: C.rojoFondo },
+    desconectado: { texto: C.gris, punto: C.grisPunto, fondo: C.grisFondo },
   };
-  return mapa[estado] ?? C.desconectado;
+  return mapa[estado] ?? mapa.desconectado;
 }
 
 export function labelEstado(estado: EstadoEquipo): string {
   const mapa: Record<EstadoEquipo, string> = {
-    normal: 'NORMAL',
-    atencion: 'ATENCIÓN',
-    critico: 'CRÍTICO',
-    desconectado: 'DESCONECTADO',
+    normal: 'Normal',
+    atencion: 'Atención',
+    critico: 'Crítico',
+    desconectado: 'Desconectado',
   };
-  return mapa[estado] ?? 'SIN DATOS';
+  return mapa[estado] ?? 'Sin datos';
 }
 
-export function infoSenal(senal: NivelSenal) {
+/** Texto, color y cantidad de arcos encendidos del ícono WiFi. */
+export function infoSenal(senal: NivelSenal): { texto: string; color: string; nivel: 1 | 2 | 3 } {
   const mapa = {
-    buena: { texto: 'Señal buena', color: C.senalBuena, icono: '▋▋▋' },
-    normal: { texto: 'Señal normal', color: C.senalNormal, icono: '▋▋░' },
-    baja: { texto: 'Señal baja', color: C.senalBaja, icono: '▋░░' },
+    buena: { texto: 'Señal buena', color: C.verde, nivel: 3 as const },
+    normal: { texto: 'Señal normal', color: C.ambar, nivel: 2 as const },
+    baja: { texto: 'Señal baja', color: C.rojo, nivel: 1 as const },
   };
-  return mapa[senal] ?? { texto: 'Sin señal', color: C.desconectado, icono: '░░░' };
+  return mapa[senal] ?? mapa.baja;
+}
+
+/** Orden de urgencia de las tarjetas: crítico, atención, desconectado y por último normal. */
+const URGENCIA: Record<EstadoEquipo, number> = { critico: 0, atencion: 1, desconectado: 2, normal: 3 };
+
+/** Equipos ordenados por urgencia; dentro de cada estado se respeta el orden de la API. */
+export function ordenarPorUrgencia<T extends { estado: EstadoEquipo }>(equipos: T[]): T[] {
+  return equipos
+    .map((eq, i) => ({ eq, i }))
+    .sort((a, b) => (URGENCIA[a.eq.estado] ?? 9) - (URGENCIA[b.eq.estado] ?? 9) || a.i - b.i)
+    .map((x) => x.eq);
+}
+
+export type ResumenEstados = Record<EstadoEquipo, number>;
+
+/** Cuántos equipos hay en cada estado (para los contadores de arriba de la lista). */
+export function resumenEstados(equipos: { estado: EstadoEquipo }[]): ResumenEstados {
+  const r: ResumenEstados = { normal: 0, atencion: 0, critico: 0, desconectado: 0 };
+  equipos.forEach((eq) => { if (eq.estado in r) r[eq.estado] += 1; });
+  return r;
+}
+
+/**
+ * Posición de la temperatura dentro del rango, de 0 (en la mínima) a 1 (en la máxima), limitada a
+ * ese intervalo. null si falta algún dato o el rango no es válido.
+ */
+export function posicionEnRango(temp: number | null | undefined, minima: number | null | undefined, maxima: number | null | undefined): number | null {
+  if (temp == null || minima == null || maxima == null) return null;
+  const t = Number(temp), lo = Number(minima), hi = Number(maxima);
+  if (![t, lo, hi].every(Number.isFinite) || hi <= lo) return null;
+  return Math.min(1, Math.max(0, (t - lo) / (hi - lo)));
 }
 
 /** Compara ids de equipo venga el id como texto (URL) o como número (API). */

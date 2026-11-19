@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { C, FontSizes, FontWeights, Radius, Spacing } from '../lib/tema';
-import { Tocable } from './ui';
+import { C, FontSizes, FontWeights, Spacing } from '../lib/tema';
+import { Icono } from './iconos';
+import { Boton } from './ui';
 
 interface Props { children: ReactNode }
 interface State { hasError: boolean; error?: Error }
@@ -21,17 +22,14 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div style={{ flex: 1, backgroundColor: C.background, justifyContent: 'center', alignItems: 'center', padding: Spacing.xl, gap: Spacing.md }}>
-          <span style={{ fontSize: 48 }}>⚠️</span>
+          <Icono nombre="alerta" tamano={44} color={C.ambar} />
           <span style={{ fontSize: FontSizes.xl, fontWeight: FontWeights.bold, color: C.text }}>Algo salió mal</span>
           <span style={{ fontSize: FontSizes.sm, color: C.textSub, textAlign: 'center', lineHeight: '22px' }}>
             {this.state.error?.message ?? 'Error inesperado'}
           </span>
-          <Tocable
-            estilo={{ marginTop: Spacing.md, paddingHorizontal: Spacing.xl, paddingVertical: Spacing.sm, borderRadius: Radius.full, borderWidth: 1, borderColor: C.primary }}
-            onPress={() => this.setState({ hasError: false, error: undefined })}
-          >
-            <span style={{ color: C.primary, fontSize: FontSizes.md, fontWeight: FontWeights.bold }}>Reintentar</span>
-          </Tocable>
+          <Boton variante="secundario" estilo={{ marginTop: Spacing.md }} onPress={() => this.setState({ hasError: false, error: undefined })}>
+            Reintentar
+          </Boton>
         </div>
       );
     }

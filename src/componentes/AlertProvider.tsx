@@ -2,6 +2,7 @@
 // showAlert(título, mensaje, botones) se puede llamar desde cualquier lado; el modal se monta una
 // sola vez en la raíz de la app.
 import { useEffect, useState, type ReactNode } from 'react';
+import { C, FontWeights, Radius, TOQUE } from '../lib/tema';
 import { Tocable } from './ui';
 
 export interface AlertButton {
@@ -63,17 +64,17 @@ export function AlertProvider({ children }: { children: ReactNode }) {
           aria-label={state.title}
           style={{
             position: 'fixed', inset: 0, zIndex: 9999,
-            backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', padding: 24,
+            backgroundColor: C.velo, justifyContent: 'center', alignItems: 'center', padding: 24,
             animation: 'aparecer 0.3s',
           }}
         >
-          <div style={{ backgroundColor: '#111823', borderRadius: 16, padding: 20, width: '100%', maxWidth: 360, borderWidth: 1, borderColor: '#1e2d3a' }}>
-            {state.title ? <span style={{ color: '#ffffff', fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{state.title}</span> : null}
-            {state.message ? <span style={{ color: '#8a9ab0', fontSize: 14, marginBottom: 20, lineHeight: '20px' }}>{state.message}</span> : null}
-            <div style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 4 }}>
+          <div style={{ backgroundColor: C.card, borderRadius: Radius.lg, padding: 20, paddingBottom: 12, width: '100%', maxWidth: 360, border: `1px solid ${C.border}`, boxShadow: '0 12px 32px rgba(0, 0, 0, 0.25)' }}>
+            {state.title ? <span style={{ color: C.text, fontSize: 17, fontWeight: FontWeights.semibold, marginBottom: 8 }}>{state.title}</span> : null}
+            {state.message ? <span style={{ color: C.textSub, fontSize: 14, marginBottom: 16, lineHeight: '20px' }}>{state.message}</span> : null}
+            <div style={{ flexDirection: 'row', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 4, marginRight: -8 }}>
               {state.buttons.map((b, i) => (
-                <Tocable key={i} onPress={() => handlePress(b)} estilo={{ paddingVertical: 10, paddingHorizontal: 14, borderRadius: 8 }} opacidadActiva={0.75}>
-                  <span style={{ color: b.style === 'destructive' ? '#ff4444' : b.style === 'cancel' ? '#8a9ab0' : '#7ed321', fontSize: 14, fontWeight: 600 }}>
+                <Tocable key={i} onPress={() => handlePress(b)} estilo={{ minHeight: TOQUE, justifyContent: 'center', paddingHorizontal: 14, borderRadius: Radius.sm }} opacidadActiva={0.6}>
+                  <span style={{ color: b.style === 'destructive' ? C.rojo : b.style === 'cancel' ? C.textSub : C.verde, fontSize: 15, fontWeight: FontWeights.semibold }}>
                     {b.text}
                   </span>
                 </Tocable>

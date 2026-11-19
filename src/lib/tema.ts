@@ -1,46 +1,64 @@
-// Colores, tamaños y espaciados de Centinela (los mismos de la versión anterior en Expo).
-// La app es oscura siempre: no cambia con el modo claro/oscuro del sistema.
+// Colores, tamaños y espaciados de Centinela.
+// Los colores son variables CSS (definidas en src/estilos.css): oscuro "Grafito" y claro "Clara",
+// según el modo del teléfono o de la computadora. Cambian en vivo, sin recargar la página.
 
-const verde = '#7ed321';
+const v = (nombre: string) => `var(--c-${nombre})`;
 
 export const C = {
-  // Fondos
-  background: '#0d1117',
-  card: '#111823',
-  cardAlt: '#0f1620',
-  border: '#1e2d3a',
+  // Fondos y bordes
+  background: v('fondo'),
+  card: v('tarjeta'),
+  control: v('control'),
+  campo: v('campo'),
+  border: v('borde'),
+  borderControl: v('borde-control'),
+  pista: v('pista'),
+  sombra: v('sombra'),
+  velo: v('velo'),
 
-  // Verde principal
-  primary: verde,
-  primaryLight: '#b5e030',
-  primaryDark: '#5a9a18',
-  primaryBg: 'rgba(126, 211, 33, 0.1)',
-  primaryBorder: 'rgba(126, 211, 33, 0.25)',
+  // Marca
+  primary: v('marca'),
+  sobrePrimary: v('sobre-marca'),
+  logoMet: v('logo-met'),
 
   // Textos
-  text: '#ffffff',
-  textSub: '#8a9ab0',
-  textMuted: '#4a5a6a',
+  text: v('texto'),
+  textSub: v('texto-sub'),
+  textMuted: v('texto-suave'),
 
-  // Estados del equipo
-  normal: verde,
-  alerta: '#f5a623',
-  critico: '#ff4444',
-  desconectado: '#4a5a6a',
+  // Estados: texto, punto/barra y fondo suave
+  verde: v('verde'),
+  verdePunto: v('verde-punto'),
+  verdeFondo: v('verde-fondo'),
+  ambar: v('ambar'),
+  ambarPunto: v('ambar-punto'),
+  ambarFondo: v('ambar-fondo'),
+  rojo: v('rojo'),
+  rojoPunto: v('rojo-punto'),
+  rojoFondo: v('rojo-fondo'),
+  gris: v('gris'),
+  grisPunto: v('gris-punto'),
+  grisFondo: v('gris-fondo'),
 
-  // Señal WiFi
-  senalBuena: verde,
-  senalNormal: '#f5a623',
-  senalBaja: '#ff4444',
+  // Tarjeta en estado crítico (oscuro: borde rojo suave; claro: fondo rojo suave)
+  criticoTarjeta: v('critico-tarjeta'),
+  criticoBorde: v('critico-borde'),
+  criticoPista: v('critico-pista'),
+  criticoBarra: v('critico-barra'),
+  tempAtencion: v('temp-atencion'),
+  tempCritico: v('temp-critico'),
 
-  white: '#ffffff',
-  black: '#000000',
-  // Fondo de la navegación por pilas (lo que se ve alrededor de las pantallas angostas)
-  fondoPila: 'rgb(1, 1, 1)',
+  // Gráfico
+  graficoLinea: v('grafico-linea'),
+  graficoGrilla: v('grafico-grilla'),
+  graficoCorte: v('grafico-corte'),
 } as const;
 
-export const FontSizes = { xs: 11, sm: 13, md: 15, lg: 17, xl: 20, xxl: 26, xxxl: 32 } as const;
-export const FontWeights = { regular: 400, medium: 500, bold: 700 } as const;
+export const FUENTE = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+
+export const FontSizes = { xs: 12, sm: 13, md: 15, lg: 17, xl: 20, xxl: 26, xxxl: 32 } as const;
+export const FontWeights = { regular: 400, medium: 500, semibold: 600, bold: 700 } as const;
 export const Spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48 } as const;
-export const Radius = { sm: 6, md: 12, lg: 18, xl: 24, full: 999 } as const;
-export const sombra = '0px 2px 8px rgba(126, 211, 33, 0.08)';
+export const Radius = { sm: 8, md: 12, lg: 16, xl: 20, full: 999 } as const;
+/** Alto mínimo de todo lo que se toca. */
+export const TOQUE = 44;

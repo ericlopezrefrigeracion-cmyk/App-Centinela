@@ -1,39 +1,36 @@
 import { useCallback, useEffect, useState } from 'react';
 import { showAlert } from '../componentes/AlertProvider';
+import { Icono } from '../componentes/iconos';
+import { TituloPestana } from '../componentes/navegacion';
 import { useTirarParaRefrescar } from '../componentes/TirarParaRefrescar';
-import { Desplazable, Spinner, Tocable } from '../componentes/ui';
+import { AvisoError, BotonIcono, Desplazable, Spinner, Tocable, tarjeta } from '../componentes/ui';
 import { equiposConAlertasSinVer, formatFecha, infoTipo, listaDeAlertas, mapearAlertas, type Alerta } from '../lib/alertas';
 import { e, type Estilo } from '../lib/estilo';
+import { formatHora24 } from '../lib/formato';
 import { alertaService, equipoService } from '../lib/servicios';
-import { C, FontSizes, FontWeights, Radius, Spacing } from '../lib/tema';
+import { C, FontSizes, FontWeights, Radius, Spacing, TOQUE } from '../lib/tema';
 
 // ─── Fila de alerta ──────────────────────────────────
 function AlertaItem({ alerta, onMarcarVista }: { alerta: Alerta; onMarcarVista: (id: number) => void }) {
   const info = infoTipo(alerta.tipo);
   return (
-    <div style={e(s.item, !alerta.vista && s.itemNoVista)}>
-      {/* Indicador lateral de color */}
-      <div style={e(s.itemBorde, { backgroundColor: info.color })} />
-
-      <div style={e(s.itemIcono, { backgroundColor: info.color + '22' })}>
-        <span style={e(s.itemIconoText)}>{info.icono}</span>
+    <div style={e(s.item)}>
+      <div style={e(s.itemIcono, { backgroundColor: info.fondo, color: info.color })}>
+        <Icono nombre={info.icono} tamano={20} />
       </div>
 
       <div style={e(s.itemContenido)}>
         <div style={e(s.itemHeader)}>
-          <div style={e(s.tipoBadge, { backgroundColor: info.color + '22', borderColor: info.color })}>
-            <span style={e(s.tipoText, { color: info.color })}>{info.label}</span>
-          </div>
+          {!alerta.vista && <div style={e(s.puntoNueva)} aria-label="Sin leer" role="img" />}
+          <span style={e(s.tipoText, { color: info.color })}>{info.label}</span>
         </div>
-        <span style={e(s.equipoNombre)}>{alerta.equipo}</span>
-        <span style={e(s.descripcion)}>{alerta.descripcion}</span>
+        <span style={e(s.equipoNombre, !alerta.vista && { fontWeight: FontWeights.bold })}>{alerta.equipo}</span>
+        {alerta.descripcion ? <span style={e(s.descripcion)}>{alerta.descripcion}</span> : null}
         <span style={e(s.fecha)}>{formatFecha(alerta.fecha)}</span>
       </div>
 
       {!alerta.vista && (
-        <Tocable estilo={s.vistaBtn} onPress={() => onMarcarVista(alerta.id)} opacidadActiva={0.75} etiqueta="Marcar como vista">
-          <span style={e(s.vistaBtnText)}>✓</span>
-        </Tocable>
+        <BotonIcono icono="check" etiqueta="Marcar como vista" onPress={() => onMarcarVista(alerta.id)} color={C.verde} />
       )}
     </div>
   );
@@ -45,6 +42,8 @@ export default function Alertas() {
   const [cargando, setCargando] = useState(true);
   const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Hora de la última actualización que salió bien (ESTANDARES D6); en ámbar si la última falló
+  const [actualizado, setActualizado] = useState<number | null>(null);
 
   const cargarAlertas = useCallback(async (esRefresh = false) => {
     try {
@@ -54,6 +53,7 @@ export default function Alertas() {
       // Alertas y equipos en paralelo, para mostrar el nombre de cada equipo
       const [data, equipos] = await Promise.all([alertaService.getAlertas(), equipoService.getMisEquipos()]);
       setAlertas(mapearAlertas(listaDeAlertas(data), equipos));
+      setActualizado(Date.now());
     } catch {
       setError('No se pudieron cargar las alertas.');
     } finally {
@@ -98,7 +98,7 @@ export default function Alertas() {
   if (cargando) {
     return (
       <div style={e(s.centrado)}>
-        <Spinner tamano="large" color={C.primary} />
+        <Spinner tamano="large" />
         <span style={e(s.cargandoText)}>Cargando alertas...</span>
       </div>
     );
@@ -106,31 +106,33 @@ export default function Alertas() {
 
   return (
     <div style={e(s.container)}>
-      <div style={e(s.header)}>
-        <div>
-          <span style={e(s.headerTitulo)}>Alertas</span>
-          {cantNoVistas > 0 && <span style={e(s.headerSub)}>{cantNoVistas} sin leer</span>}
-        </div>
-        {cantNoVistas > 0 && (
-          <Tocable estilo={s.marcarTodasBtn} onPress={handleMarcarTodas} opacidadActiva={0.75}>
-            <span style={e(s.marcarTodasText)}>Marcar todas</span>
-          </Tocable>
+      <TituloPestana
+        titulo="Alertas"
+        sub={(
+          <>
+            {cantNoVistas > 0 && <span style={{ color: C.textSub }}>{cantNoVistas} sin leer · </span>}
+            {actualizado != null && <span style={{ color: error ? C.ambar : C.textSub }}>Act. {formatHora24(actualizado)}</span>}
+          </>
         )}
-      </div>
+        derecha={(
+          <div style={e(s.botonesHeader)}>
+            <BotonIcono icono="actualizar" etiqueta="Actualizar" onPress={() => cargarAlertas(true)} fondo={C.card} borde={C.border} color={C.textSub} />
+            {cantNoVistas > 0 && (
+              <Tocable estilo={s.marcarTodasBtn} onPress={handleMarcarTodas} opacidadActiva={0.6}>
+                <Icono nombre="check" tamano={16} />
+                <span style={e(s.marcarTodasText)}>Marcar todas</span>
+              </Tocable>
+            )}
+          </div>
+        )}
+      />
 
-      {error && (
-        <div style={e(s.errorBanner)}>
-          <span style={e(s.errorText)}>⚠️ {error}</span>
-          <Tocable onPress={() => cargarAlertas()}>
-            <span style={e(s.errorRetry)}>Reintentar</span>
-          </Tocable>
-        </div>
-      )}
+      {error && <AvisoError texto={error} onReintentar={() => cargarAlertas()} />}
 
       <Desplazable ref={ref} estiloContenido={[s.lista, s.listaAncha]} arriba={indicador}>
         {alertas.length === 0 ? (
           <div style={e(s.vacio)}>
-            <span style={e(s.vacioIcono)}>🔕</span>
+            <div style={e(s.vacioIcono)}><Icono nombre="campanaApagada" tamano={28} /></div>
             <span style={e(s.vacioTitulo)}>Sin alertas</span>
             <span style={e(s.vacioSub)}>
               No tenés alertas pendientes.{'\n'}
@@ -154,52 +156,29 @@ const s: Record<string, Estilo> = {
   centrado: { flex: 1, backgroundColor: C.background, justifyContent: 'center', alignItems: 'center', gap: Spacing.md },
   cargandoText: { color: C.textSub, fontSize: FontSizes.sm },
 
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: Spacing.lg, paddingTop: Spacing.xxl, paddingBottom: Spacing.md,
-    backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.border,
+  botonesHeader: { flexDirection: 'row', gap: Spacing.sm },
+  marcarTodasBtn: {
+    minHeight: TOQUE, paddingHorizontal: 14, borderRadius: Radius.md, backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
+    flexDirection: 'row', alignItems: 'center', gap: 6, color: C.text, flexShrink: 0,
   },
-  headerTitulo: { color: C.text, fontSize: FontSizes.xxl, fontWeight: FontWeights.bold },
-  headerSub: { color: C.critico, fontSize: FontSizes.sm, marginTop: 2 },
-  marcarTodasBtn: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: Radius.full, borderWidth: 1, borderColor: C.primary },
-  marcarTodasText: { color: C.primary, fontSize: FontSizes.sm, fontWeight: FontWeights.medium },
-
-  errorBanner: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: 'rgba(255,68,68,0.1)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,68,68,0.3)',
-    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm,
-  },
-  errorText: { color: C.critico, fontSize: FontSizes.sm, flex: 1 },
-  errorRetry: { color: C.primary, fontSize: FontSizes.sm, fontWeight: FontWeights.bold },
+  marcarTodasText: { color: C.text, fontSize: FontSizes.sm, fontWeight: FontWeights.semibold },
 
   // Es un listado cronológico: en pantallas anchas se acota el ancho en vez de pasar a grilla
-  lista: { padding: Spacing.md, paddingBottom: 40 },
+  lista: { paddingHorizontal: Spacing.md, paddingBottom: 24 },
   listaAncha: { maxWidth: 800, width: '100%', alignSelf: 'center' },
 
-  item: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: Radius.lg,
-    marginBottom: Spacing.sm, borderWidth: 1, borderColor: C.border, overflow: 'hidden',
-  },
-  itemNoVista: { borderColor: 'rgba(126, 211, 33, 0.2)', backgroundColor: 'rgba(126, 211, 33, 0.03)' },
-  itemBorde: { width: 4, alignSelf: 'stretch' },
-  itemIcono: { width: 42, height: 42, borderRadius: Radius.md, justifyContent: 'center', alignItems: 'center', margin: Spacing.sm },
-  itemIconoText: { fontSize: 20 },
-  itemContenido: { flex: 1, paddingVertical: Spacing.sm, paddingRight: Spacing.sm },
-  itemHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginBottom: 4 },
-  tipoBadge: { paddingHorizontal: Spacing.sm, paddingVertical: 2, borderRadius: Radius.full, borderWidth: 1 },
-  tipoText: { fontSize: FontSizes.xs, fontWeight: FontWeights.bold, letterSpacing: 0.5 },
-  equipoNombre: { color: C.text, fontSize: FontSizes.md, fontWeight: FontWeights.bold, marginBottom: 2 },
-  descripcion: { color: C.textSub, fontSize: FontSizes.sm, lineHeight: 18, marginBottom: 4 },
-  fecha: { color: C.textMuted, fontSize: FontSizes.xs },
-
-  vistaBtn: {
-    width: 36, height: 36, borderRadius: 18, backgroundColor: C.primaryBg, borderWidth: 1, borderColor: C.primary,
-    justifyContent: 'center', alignItems: 'center', marginRight: Spacing.sm,
-  },
-  vistaBtnText: { color: C.primary, fontSize: FontSizes.md, fontWeight: FontWeights.bold },
+  item: { ...tarjeta, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, paddingLeft: 14, marginBottom: Spacing.sm },
+  itemIcono: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  itemContenido: { flex: 1, gap: 2, minWidth: 0 },
+  itemHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  puntoNueva: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.primary },
+  tipoText: { fontSize: FontSizes.sm, fontWeight: FontWeights.semibold },
+  equipoNombre: { color: C.text, fontSize: FontSizes.md, fontWeight: FontWeights.medium },
+  descripcion: { color: C.text, fontSize: FontSizes.sm },
+  fecha: { color: C.textSub, fontSize: FontSizes.xs },
 
   vacio: { alignItems: 'center', paddingVertical: Spacing.xxl, gap: Spacing.sm },
-  vacioIcono: { fontSize: 48 },
+  vacioIcono: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.card, color: C.textSub, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm },
   vacioTitulo: { color: C.text, fontSize: FontSizes.xl, fontWeight: FontWeights.bold },
   vacioSub: { color: C.textSub, fontSize: FontSizes.sm, textAlign: 'center', lineHeight: 22 },
 };

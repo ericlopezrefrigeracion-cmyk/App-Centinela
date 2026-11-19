@@ -1,63 +1,83 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { showAlert } from '../componentes/AlertProvider';
+import { Icono, IconoSenal } from '../componentes/iconos';
 import { useTirarParaRefrescar } from '../componentes/TirarParaRefrescar';
-import { Desplazable, Spinner, Tocable, useBreakpoint } from '../componentes/ui';
+import { AvisoError, BotonIcono, Desplazable, Spinner, Tocable, tarjeta, useBreakpoint } from '../componentes/ui';
 import { useAuth } from '../contexto/AuthContext';
-import { alCambiarEquipos, colorEstado, infoSenal, labelEstado, prepararEquipos, type Equipo } from '../lib/equipos';
+import {
+  alCambiarEquipos, colorEstado, infoSenal, labelEstado, ordenarPorUrgencia, posicionEnRango, prepararEquipos, resumenEstados,
+  type Equipo, type EstadoEquipo,
+} from '../lib/equipos';
 import { e, type Estilo } from '../lib/estilo';
+import { formatHora24, formatNumero, formatTemp, haceCuanto } from '../lib/formato';
 import { equipoService } from '../lib/servicios';
-import { C, FontSizes, FontWeights, Radius, Spacing, sombra } from '../lib/tema';
+import { C, FontSizes, FontWeights, Radius, Spacing } from '../lib/tema';
 
 /** Cada cuánto se actualiza la lista sola mientras la pestaña está visible. */
 const INTERVALO_MS = 60000;
 
 // ─── Tarjeta de equipo ───────────────────────────────
-function EquipoCard({ equipo }: { equipo: Equipo }) {
+function EquipoCard({ equipo, ahora }: { equipo: Equipo; ahora: number }) {
   const navigate = useNavigate();
   const col = colorEstado(equipo.estado);
   const senal = infoSenal(equipo.senal);
-  const label = labelEstado(equipo.estado);
+  const critico = equipo.estado === 'critico';
+  const posicion = posicionEnRango(equipo.temperatura, equipo.minima, equipo.maxima);
+  const colorTemp = critico ? C.tempCritico
+    : equipo.estado === 'atencion' ? C.tempAtencion
+    : equipo.estado === 'desconectado' ? C.textSub
+    : C.text;
 
   return (
-    <div style={e(s.card, { borderLeftColor: col })}>
-      <div style={e(s.cardHeader)}>
-        <div style={e(s.cardTitleRow)}>
-          <div style={e(s.statusDot, { backgroundColor: col })} />
+    <div style={e(s.card, critico && { backgroundColor: C.criticoTarjeta, borderColor: C.criticoBorde })}>
+      <div style={e(s.filaArriba)}>
+        <div style={e(s.titulos)}>
           <span style={e(s.cardName)}>{equipo.nombre}</span>
+          <span style={e(s.cardSub)}>
+            Rango {formatNumero(equipo.minima)} a {formatNumero(equipo.maxima)} °C · {haceCuanto(equipo.ultimaConexion, ahora)}
+          </span>
         </div>
-        <div style={e(s.estadoBadge, { backgroundColor: col + '22', borderColor: col })}>
-          <span style={e(s.estadoText, { color: col })}>{label}</span>
+        <div style={e(s.estado)}>
+          <div style={e(s.punto, { backgroundColor: col.punto })} />
+          <span style={e(s.estadoText, { color: col.texto })}>{labelEstado(equipo.estado)}</span>
         </div>
       </div>
 
-      <div style={e(s.tempRow)}>
-        <span style={e(s.tempValue, { color: col })}>
-          {equipo.temperatura != null ? `${Number(equipo.temperatura).toFixed(1)}°C` : '---'}
+      <div style={e(s.filaMedio)}>
+        <span style={e(s.tempValue, { color: colorTemp })}>
+          {formatTemp(equipo.temperatura)}
+          <span style={e(s.tempUnidad)}> °C</span>
         </span>
-        <span style={e(s.tempLabel)}>temperatura actual</span>
+        <div style={e(s.acciones)}>
+          <BotonIcono icono="grafico" etiqueta={`Ver datos de ${equipo.nombre}`} onPress={() => navigate(`/equipo/${equipo.id}`)} />
+          <BotonIcono icono="ajustes" etiqueta={`Configurar ${equipo.nombre}`} onPress={() => navigate(`/equipo/configurar/${equipo.id}`)} />
+        </div>
+      </div>
+
+      {/* Posición de la temperatura dentro del rango permitido */}
+      <div style={e(s.pista, critico && { backgroundColor: C.criticoPista })} aria-hidden="true">
+        {posicion != null && (
+          <div style={e(s.barra, { width: `${Math.max(posicion, 0.03) * 100}%`, backgroundColor: critico ? C.criticoBarra : col.punto })} />
+        )}
       </div>
 
       <div style={e(s.senalRow)}>
-        <span style={e(s.senalIcono, { color: senal.color })}>{senal.icono}</span>
-        <span style={e(s.senalTexto, { color: senal.color })}>{senal.texto}</span>
+        <IconoSenal nivel={senal.nivel} color={senal.color} />
+        <span style={e(s.senalTexto)}>{senal.texto}</span>
       </div>
+    </div>
+  );
+}
 
-      {equipo.ultimaConexion && (
-        <span style={e(s.ultimaConexion)}>
-          Última conexión: {new Date(equipo.ultimaConexion).toLocaleString('es-AR')}
-        </span>
-      )}
-
-      <div style={e(s.cardActions)}>
-        <Tocable estilo={s.actionBtn} onPress={() => navigate(`/equipo/${equipo.id}`)} opacidadActiva={0.75}>
-          <span style={e(s.actionIcon)}>📊</span>
-          <span style={e(s.actionText)}>Ver datos</span>
-        </Tocable>
-        <Tocable estilo={s.actionBtn} onPress={() => navigate(`/equipo/configurar/${equipo.id}`)} opacidadActiva={0.75}>
-          <span style={e(s.actionIcon)}>⚙️</span>
-          <span style={e(s.actionText)}>Configurar</span>
-        </Tocable>
+/** Contador del resumen de arriba (Normal, Atención, Crítico y, si hay, Desconectado). */
+function Contador({ cantidad, estado }: { cantidad: number; estado: EstadoEquipo }) {
+  return (
+    <div style={e(s.contador)}>
+      <span style={e(s.contadorNumero)}>{cantidad}</span>
+      <div style={e(s.contadorEtiqueta)}>
+        <div style={e(s.punto, { backgroundColor: colorEstado(estado).punto })} />
+        <span style={e(s.contadorTexto)}>{labelEstado(estado)}</span>
       </div>
     </div>
   );
@@ -73,6 +93,8 @@ export default function Equipos() {
   const [cargando, setCargando] = useState(true);
   const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Hora de la última actualización que salió bien (ESTANDARES D6); en ámbar si la última falló
+  const [actualizado, setActualizado] = useState<number | null>(null);
 
   const cargarEquipos = useCallback(async (esRefresh = false) => {
     try {
@@ -81,6 +103,7 @@ export default function Equipos() {
       setError(null);
       const data = await equipoService.getMisEquipos();
       setEquipos(prepararEquipos(data));
+      setActualizado(Date.now());
     } catch {
       setError('No se pudieron cargar los equipos. Revisá tu conexión.');
     } finally {
@@ -134,67 +157,63 @@ export default function Equipos() {
   if (cargando) {
     return (
       <div style={e(s.centrado)}>
-        <Spinner tamano="large" color={C.primary} />
+        <Spinner tamano="large" />
         <span style={e(s.cargandoText)}>Cargando equipos...</span>
       </div>
     );
   }
 
-  // Grilla de 1, 2 o 3 columnas según el ancho
-  const filas: Equipo[][] = [];
-  for (let i = 0; i < equipos.length; i += numColumns) filas.push(equipos.slice(i, i + numColumns));
+  const ordenados = ordenarPorUrgencia(equipos);
+  const resumen = resumenEstados(equipos);
+  const contadores: EstadoEquipo[] = ['normal', 'atencion', 'critico'];
+  if (resumen.desconectado > 0) contadores.push('desconectado');
+  const ahora = Date.now();
 
   return (
     <div style={e(s.container)}>
       <div style={e(s.header)}>
-        <div>
-          <span style={e(s.headerGreeting)}>Hola, {usuario?.nombre ?? 'Usuario'}</span>
-          <div style={e(s.logoRow)}>
-            <span style={e(s.logoTele)}>tele</span>
-            <span style={e(s.logoMet)}>met</span>
-            <span style={e(s.logoCentinela)}> · Centinela</span>
-          </div>
+        <div style={e(s.titulos)}>
+          <span style={e(s.logo)}>tele<span style={{ color: C.logoMet }}>met</span></span>
+          <span style={e(s.headerGreeting)}>
+            Hola, {usuario?.nombre ?? 'Usuario'} · {equipos.length === 1 ? '1 equipo' : `${equipos.length} equipos`}
+            {actualizado != null && <span style={{ color: error ? C.ambar : C.textSub }}> · Act. {formatHora24(actualizado)}</span>}
+          </span>
         </div>
-        <Tocable onPress={handleLogout} estilo={s.logoutBtn}>
-          <span style={e(s.logoutText)}>Salir</span>
-        </Tocable>
+        <div style={e(s.botonesHeader)}>
+          <BotonIcono icono="actualizar" etiqueta="Actualizar" onPress={() => cargarEquipos(true)} fondo={C.card} borde={C.border} color={C.textSub} />
+          <BotonIcono icono="salir" etiqueta="Cerrar sesión" onPress={handleLogout} fondo={C.card} borde={C.border} color={C.textSub} />
+        </div>
       </div>
 
-      {error && (
-        <div style={e(s.errorBanner)}>
-          <span style={e(s.errorBannerText)}>⚠️ {error}</span>
-          <Tocable onPress={() => cargarEquipos()}>
-            <span style={e(s.errorBannerRetry)}>Reintentar</span>
-          </Tocable>
-        </div>
-      )}
+      {error && <AvisoError texto={error} onReintentar={() => cargarEquipos()} />}
 
       <Desplazable ref={ref} estiloContenido={[s.lista, s.listaAncha]} arriba={indicador}>
         {equipos.length === 0 ? (
           <div style={e(s.vacio)}>
-            <span style={e(s.vacioIcono)}>🌡️</span>
+            <div style={e(s.vacioIcono)}><Icono nombre="termometro" tamano={28} /></div>
             <span style={e(s.vacioTitulo)}>Sin equipos</span>
             <span style={e(s.vacioSub)}>
               Todavía no tenés equipos agregados.{'\n'}
               Tocá el botón + para agregar uno.
             </span>
           </div>
-        ) : numColumns === 1 ? (
-          // Cada tarjeta va en su celda, como en la lista anterior
-          equipos.map((eq) => <div key={String(eq.id)}><EquipoCard equipo={eq} /></div>)
         ) : (
-          filas.map((fila, i) => (
-            <div key={i}>
-              <div style={e(s.fila)}>
-                {fila.map((eq) => <EquipoCard key={String(eq.id)} equipo={eq} />)}
-              </div>
+          <>
+            {/* Con cuatro contadores en un celular van de a dos por fila, para que "Desconectado" entre entero */}
+            <div style={e(s.resumen, { gridTemplateColumns: `repeat(${esMobile && contadores.length > 3 ? 2 : contadores.length}, minmax(0, 1fr))` })}>
+              {contadores.map((estado) => <Contador key={estado} estado={estado} cantidad={resumen[estado]} />)}
             </div>
-          ))
+            {/* Grilla de 1, 2 o 3 columnas según el ancho; lo más urgente primero */}
+            <div style={e(s.grilla, { gridTemplateColumns: `repeat(${numColumns}, minmax(0, 1fr))` })}>
+              {ordenados.map((eq) => <EquipoCard key={String(eq.id)} equipo={eq} ahora={ahora} />)}
+            </div>
+          </>
         )}
       </Desplazable>
 
       <Tocable estilo={s.fab} onPress={() => navigate('/equipo/agregar')} opacidadActiva={0.85} etiqueta="Agregar equipo">
-        <span style={e(s.fabText)}>+</span>
+        <Icono nombre="mas" tamano={20} grosor={2.5} />
+        <span style={e(s.fabText)}>Agregar</span>
       </Tocable>
     </div>
   );
@@ -206,64 +225,54 @@ const s: Record<string, Estilo> = {
   cargandoText: { color: C.textSub, fontSize: FontSizes.sm },
 
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: Spacing.lg, paddingTop: Spacing.xxl, paddingBottom: Spacing.md,
-    backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.border,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12,
+    paddingTop: 22, paddingBottom: 14, paddingHorizontal: 20, width: '100%', maxWidth: 1200, alignSelf: 'center',
   },
-  headerGreeting: { color: C.textSub, fontSize: FontSizes.sm, marginBottom: 2 },
-  logoRow: { flexDirection: 'row', alignItems: 'center' },
-  logoTele: { color: C.text, fontSize: FontSizes.xl, fontWeight: FontWeights.bold },
-  logoMet: { color: C.primary, fontSize: FontSizes.xl, fontWeight: FontWeights.bold },
-  logoCentinela: { color: C.textSub, fontSize: FontSizes.md },
-  logoutBtn: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: Radius.full, borderWidth: 1, borderColor: C.border },
-  logoutText: { color: C.textSub, fontSize: FontSizes.sm },
+  titulos: { gap: 2, flexShrink: 1, minWidth: 0 },
+  logo: { color: C.text, fontSize: FontSizes.xl, fontWeight: FontWeights.bold, letterSpacing: -0.3 },
+  headerGreeting: { color: C.textSub, fontSize: FontSizes.sm },
+  botonesHeader: { flexDirection: 'row', gap: Spacing.sm },
 
-  errorBanner: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: 'rgba(255,68,68,0.1)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,68,68,0.3)',
-    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm,
-  },
-  errorBannerText: { color: C.critico, fontSize: FontSizes.sm, flex: 1 },
-  errorBannerRetry: { color: C.primary, fontSize: FontSizes.sm, fontWeight: FontWeights.bold, marginLeft: Spacing.sm },
-
-  lista: { padding: Spacing.md, paddingBottom: 100 },
+  lista: { paddingHorizontal: Spacing.md, paddingBottom: 100 },
   // En pantallas anchas la grilla queda centrada en vez de ir de punta a punta
   listaAncha: { maxWidth: 1200, width: '100%', alignSelf: 'center' },
-  fila: { flexDirection: 'row', gap: Spacing.md },
 
-  card: {
-    flex: 1, backgroundColor: C.card, borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.md,
-    borderWidth: 1, borderColor: C.border, borderLeftWidth: 4, boxShadow: sombra,
-  },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.sm },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, flex: 1 },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
-  cardName: { color: C.text, fontSize: FontSizes.lg, fontWeight: FontWeights.bold, flex: 1 },
-  estadoBadge: { paddingHorizontal: Spacing.sm, paddingVertical: 2, borderRadius: Radius.full, borderWidth: 1 },
-  estadoText: { fontSize: FontSizes.xs, fontWeight: FontWeights.bold, letterSpacing: 0.5 },
+  resumen: { display: 'grid', gap: Spacing.sm, marginBottom: 12 },
+  contador: { backgroundColor: C.card, borderRadius: Radius.md, paddingVertical: 10, paddingHorizontal: 12, gap: 2, boxShadow: C.sombra },
+  contadorNumero: { color: C.text, fontSize: FontSizes.xl, fontWeight: FontWeights.bold },
+  contadorEtiqueta: { flexDirection: 'row', alignItems: 'center', gap: 6, minWidth: 0 },
+  contadorTexto: { color: C.textSub, fontSize: FontSizes.xs, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
 
-  tempRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm, marginBottom: Spacing.sm },
-  tempValue: { fontSize: FontSizes.xxxl, fontWeight: FontWeights.bold },
-  tempLabel: { color: C.textMuted, fontSize: FontSizes.xs },
+  grilla: { display: 'grid', gap: 10, alignItems: 'start' },
 
-  senalRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginBottom: Spacing.xs },
-  senalIcono: { fontSize: FontSizes.sm, letterSpacing: -2 },
-  senalTexto: { fontSize: FontSizes.sm },
-  ultimaConexion: { color: C.textMuted, fontSize: FontSizes.xs, marginBottom: Spacing.sm },
+  card: { ...tarjeta, padding: Spacing.md, gap: 12 },
+  filaArriba: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 },
+  cardName: { color: C.text, fontSize: 16, fontWeight: FontWeights.semibold, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  cardSub: { color: C.textSub, fontSize: FontSizes.xs },
+  estado: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 3 },
+  punto: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
+  estadoText: { fontSize: FontSizes.xs, fontWeight: FontWeights.semibold, whiteSpace: 'nowrap' },
 
-  cardActions: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: C.border, paddingTop: Spacing.sm, marginTop: Spacing.xs, gap: Spacing.xs },
-  actionBtn: { flex: 1, alignItems: 'center', paddingVertical: Spacing.xs, borderRadius: Radius.sm, backgroundColor: C.cardAlt, gap: 2 },
-  actionIcon: { fontSize: 18 },
-  actionText: { color: C.textSub, fontSize: FontSizes.xs },
+  filaMedio: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  tempValue: { fontSize: 38, fontWeight: FontWeights.bold, letterSpacing: -1, lineHeight: 1, whiteSpace: 'nowrap' },
+  tempUnidad: { fontSize: 18, fontWeight: FontWeights.medium, color: C.textSub, letterSpacing: 0 },
+  acciones: { flexDirection: 'row', gap: Spacing.sm },
+
+  pista: { height: 4, borderRadius: 2, backgroundColor: C.pista, overflow: 'hidden' },
+  barra: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 2 },
+
+  senalRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: -2 },
+  senalTexto: { color: C.textSub, fontSize: FontSizes.xs },
 
   vacio: { alignItems: 'center', paddingVertical: Spacing.xxl, gap: Spacing.sm },
-  vacioIcono: { fontSize: 48 },
+  vacioIcono: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.card, color: C.textSub, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm },
   vacioTitulo: { color: C.text, fontSize: FontSizes.xl, fontWeight: FontWeights.bold },
   vacioSub: { color: C.textSub, fontSize: FontSizes.sm, textAlign: 'center', lineHeight: 22 },
 
   fab: {
-    position: 'absolute', bottom: Spacing.xl, right: Spacing.lg, width: 56, height: 56, borderRadius: 28,
-    backgroundColor: C.primary, justifyContent: 'center', alignItems: 'center', boxShadow: sombra,
+    position: 'absolute', bottom: 20, right: 20, height: 52, paddingHorizontal: 20, borderRadius: Radius.lg,
+    backgroundColor: C.primary, color: C.sobrePrimary, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8,
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
   },
-  fabText: { color: C.black, fontSize: 28, fontWeight: FontWeights.bold, lineHeight: 32 },
+  fabText: { color: C.sobrePrimary, fontSize: 15, fontWeight: FontWeights.semibold },
 };

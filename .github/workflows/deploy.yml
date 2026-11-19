@@ -10,9 +10,9 @@ permissions:
   contents: read
 
 concurrency:
-  # Un PR no cancela un deploy en curso de main (cada rama tiene su grupo).
+  # Cada rama tiene su grupo; los deploys de main hacen fila y nunca se cancelan a mitad (ESTANDARES B4).
   group: deploy-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -28,6 +28,9 @@ jobs:
 
       - name: Instalar dependencias
         run: npm ci
+
+      - name: Auditoría de dependencias de producción (ESTANDARES B8)
+        run: npm audit --omit=dev
 
       - name: Tipos (tsc)
         run: npm run typecheck
@@ -51,9 +54,17 @@ jobs:
           script: |
             set -e
             cd /opt/centinela
+            ANTES=$(git rev-parse HEAD)
             git fetch origin main
             git reset --hard origin/main
+            # Probar la configuración nueva de nginx antes de usarla; si falla, volver a la anterior (ESTANDARES B6)
+            if ! docker compose run --rm --no-deps -T nginx nginx -t -c /etc/nginx/centinela/nginx.conf; then
+              echo "✗ nginx -t falló: vuelvo a la configuración anterior"
+              git reset --hard "$ANTES"
+              exit 1
+            fi
             docker compose up -d
+            docker exec nginx nginx -s reload
 
       - name: Subir dist/ al VPS
         if: github.event_name == 'push'
@@ -78,4 +89,11 @@ jobs:
           done
           curl -fsS -o /dev/null "https://clientes.telemet.com.ar/$JS"
           curl -fsS -o /dev/null https://clientes.telemet.com.ar/manifest.json
+          # App privada: no indexable (robots, cabecera y meta) y con las cabeceras de seguridad (ESTANDARES B7, C2)
+          curl -fsS https://clientes.telemet.com.ar/robots.txt | grep -q "Disallow: /" || { echo "✗ robots.txt no bloquea"; exit 1; }
+          CAB=$(curl -fsSI https://clientes.telemet.com.ar/equipo/123)
+          for H in "x-robots-tag: noindex" "content-security-policy:" "strict-transport-security:" "x-content-type-options: nosniff"; do
+            echo "$CAB" | grep -qi "$H" || { echo "✗ falta la cabecera $H"; exit 1; }
+          done
+          grep -q 'name="robots" content="noindex' dist/index.html || { echo "✗ falta la meta robots noindex"; exit 1; }
           echo "✓ Sitio responde OK con la versión nueva"

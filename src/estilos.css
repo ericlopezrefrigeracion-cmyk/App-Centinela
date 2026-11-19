@@ -1,8 +1,116 @@
 /*
+ * Colores de la app: dos temas que siguen el modo del teléfono o de la computadora
+ * (prefers-color-scheme). Oscuro = "Grafito"; claro = "Clara". Los estilos en línea de cada pantalla
+ * usan estas variables (ver src/lib/tema.ts), así que al cambiar el modo del sistema la app cambia
+ * en vivo, sin recargar.
+ */
+:root {
+  color-scheme: light dark;
+
+  /* Fondos y bordes */
+  --c-fondo: #0f1012;
+  --c-tarjeta: #17191d;
+  --c-control: #22252a;        /* botones de ícono y controles dentro de una tarjeta */
+  --c-campo: #111215;          /* fondo de los campos de texto */
+  --c-borde: #24272c;
+  --c-borde-control: #2e3238;
+  --c-pista: #2a2d33;          /* barra de rango, interruptor apagado */
+  --c-sombra: none;
+  --c-velo: rgba(0, 0, 0, 0.6);
+
+  /* Textos */
+  --c-texto: #f2f3f5;
+  --c-texto-sub: #9ba1a8;
+  --c-texto-suave: #8b9198;
+
+  /* Marca */
+  --c-marca: #7ed321;          /* fondo de botones principales */
+  --c-sobre-marca: #0f1012;    /* texto sobre la marca */
+  --c-logo-met: #7ed321;
+
+  /* Estados: texto, punto/barra y fondo suave */
+  --c-verde: #7ed321;
+  --c-verde-punto: #7ed321;
+  --c-verde-fondo: rgba(126, 211, 33, 0.12);
+  --c-ambar: #f2b33d;
+  --c-ambar-punto: #f2b33d;
+  --c-ambar-fondo: rgba(242, 179, 61, 0.12);
+  --c-rojo: #ff6b6b;
+  --c-rojo-punto: #ff6b6b;
+  --c-rojo-fondo: rgba(255, 107, 107, 0.12);
+  --c-gris: #9ba1a8;
+  --c-gris-punto: #6b7178;
+  --c-gris-fondo: rgba(155, 161, 168, 0.12);
+
+  /* Tarjeta en estado crítico: en oscuro, borde rojo suave */
+  --c-critico-tarjeta: #17191d;
+  --c-critico-borde: rgba(255, 107, 107, 0.35);
+  --c-critico-pista: #2a2d33;
+  --c-critico-barra: rgba(255, 107, 107, 0.55);
+
+  /* Temperatura grande de la tarjeta (en oscuro va siempre en blanco) */
+  --c-temp-atencion: #f2f3f5;
+  --c-temp-critico: #f2f3f5;
+
+  /* Gráfico */
+  --c-grafico-linea: #7ed321;
+  --c-grafico-grilla: #2a2d33;
+  --c-grafico-corte: #8b9198;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --c-fondo: #f4f6f8;
+    --c-tarjeta: #ffffff;
+    --c-control: #f7f9fb;
+    --c-campo: #ffffff;
+    --c-borde: #e2e7ed;
+    --c-borde-control: #d5dce4;
+    --c-pista: #e9edf2;
+    --c-sombra: 0 1px 2px rgba(16, 24, 32, 0.05);
+    --c-velo: rgba(16, 24, 32, 0.45);
+
+    --c-texto: #101820;
+    --c-texto-sub: #5a6776;
+    --c-texto-suave: #5a6776;
+
+    --c-marca: #7ed321;
+    --c-sobre-marca: #101820;
+    --c-logo-met: #4e9a12;
+
+    --c-verde: #2f7a0a;
+    --c-verde-punto: #4e9a12;
+    --c-verde-fondo: #e8f5dc;
+    --c-ambar: #8a5200;
+    --c-ambar-punto: #d98a00;
+    --c-ambar-fondo: #fdf0d8;
+    --c-rojo: #c62828;
+    --c-rojo-punto: #c62828;
+    --c-rojo-fondo: #fff6f6;
+    --c-gris: #5a6776;
+    --c-gris-punto: #8a96a3;
+    --c-gris-fondo: #eef1f4;
+
+    /* Tarjeta en estado crítico: en claro, fondo rojo suave */
+    --c-critico-tarjeta: #fff6f6;
+    --c-critico-borde: #f3c7c7;
+    --c-critico-pista: #f1dada;
+    --c-critico-barra: #c62828;
+
+    --c-temp-atencion: #8a5200;
+    --c-temp-critico: #c62828;
+
+    --c-grafico-linea: #4e9a12;
+    --c-grafico-grilla: #e2e7ed;
+    --c-grafico-corte: #8a96a3;
+  }
+}
+
+/*
  * Base de estilos. Reproduce los valores por defecto que tenía la versión en React Native Web,
  * para que las pantallas se vean exactamente igual:
  *  - cada <div> se comporta como un View (flex en columna, sin achicarse, posición relativa);
- *  - cada <span> es un Text (fuente del sistema de 14 px, texto negro, respeta saltos de línea);
+ *  - cada <span> es un Text (Inter de 14 px, color de texto del tema, respeta saltos de línea);
  *  - los <input>/<textarea> arrancan sin bordes ni fondo, como un TextInput.
  * El diseño de cada pantalla se escribe con estilos en línea (ver src/lib/estilo.ts).
  */
@@ -20,7 +128,10 @@ body {
   margin: 0;
   /* El desplazamiento es por pantalla (como antes), no del documento entero */
   overflow: hidden;
-  background-color: rgb(1, 1, 1);
+  background-color: var(--c-fondo);
+  color: var(--c-texto);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 #root {
@@ -47,9 +158,9 @@ div {
 
 span {
   border: 0 solid black;
-  color: black;
+  color: var(--c-texto);
   display: inline;
-  font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font: 14px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   margin: 0;
   padding: 0;
   position: relative;
@@ -73,8 +184,8 @@ textarea {
   background-color: transparent;
   border: 0 solid black;
   border-radius: 0;
-  color: black;
-  font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--c-texto);
+  font: 14px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   margin: 0;
   padding: 0;
   resize: none;
@@ -82,7 +193,7 @@ textarea {
 
 input::placeholder,
 textarea::placeholder {
-  color: var(--color-placeholder, darkgray);
+  color: var(--color-placeholder, var(--c-texto-suave));
   opacity: 1;
 }
 
@@ -130,4 +241,13 @@ a.tocable {
 @keyframes aparecer {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* Foco visible con teclado */
+.tocable:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--c-marca);
+  outline-offset: 2px;
 }
