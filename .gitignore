@@ -1,46 +1,19 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
+# dependencias
 node_modules/
 
-# Expo
-.expo/
+# build de Vite
 dist/
-web-build/
-expo-env.d.ts
-
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-
-# Metro
-.metro-health-check*
 
 # debug
 npm-debug.*
-yarn-debug.*
-yarn-error.*
 
-# macOS
+# sistema
 .DS_Store
 *.pem
+*.key
 
-# local env files
+# variables locales
 .env*.local
 
 # typescript
 *.tsbuildinfo
-
-app-example
-
-# generated native folders
-/ios
-/android
-
-# Firebase — claves sensibles
-GoogleService-Info.plist

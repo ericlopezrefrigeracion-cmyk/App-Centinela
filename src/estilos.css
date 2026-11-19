@@ -1,0 +1,133 @@
+/*
+ * Base de estilos. Reproduce los valores por defecto que tenía la versión en React Native Web,
+ * para que las pantallas se vean exactamente igual:
+ *  - cada <div> se comporta como un View (flex en columna, sin achicarse, posición relativa);
+ *  - cada <span> es un Text (fuente del sistema de 14 px, texto negro, respeta saltos de línea);
+ *  - los <input>/<textarea> arrancan sin bordes ni fondo, como un TextInput.
+ * El diseño de cada pantalla se escribe con estilos en línea (ver src/lib/estilo.ts).
+ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  /* El desplazamiento es por pantalla (como antes), no del documento entero */
+  overflow: hidden;
+  background-color: rgb(1, 1, 1);
+}
+
+#root {
+  display: flex;
+  height: 100%;
+  flex: 1;
+}
+
+div {
+  align-items: stretch;
+  border: 0 solid black;
+  display: flex;
+  flex-basis: auto;
+  flex-direction: column;
+  flex-shrink: 0;
+  list-style: none;
+  margin: 0;
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+  position: relative;
+  z-index: 0;
+}
+
+span {
+  border: 0 solid black;
+  color: black;
+  display: inline;
+  font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  text-align: start;
+  text-decoration: none;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* Texto dentro de texto: hereda todo del padre (como un Text anidado) */
+span span {
+  color: inherit;
+  font: inherit;
+  text-decoration: inherit;
+  white-space: inherit;
+}
+
+input,
+textarea {
+  appearance: none;
+  background-color: transparent;
+  border: 0 solid black;
+  border-radius: 0;
+  color: black;
+  font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  resize: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-placeholder, darkgray);
+  opacity: 1;
+}
+
+/* Zona con desplazamiento propio (equivale a un ScrollView) */
+.desplazable {
+  flex: 1 1 0%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Capa propia, como el ScrollView de RN Web (también define cómo se suaviza el texto) */
+  transform: translateZ(0);
+}
+
+/* Botón táctil (equivale a TouchableOpacity): baja la opacidad mientras se aprieta */
+.tocable {
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s;
+}
+
+.tocable:active {
+  opacity: var(--opacidad-activa, 0.2);
+  transition-duration: 0s;
+}
+
+.tocable[aria-disabled='true'] {
+  cursor: default;
+}
+
+.tocable[aria-disabled='true']:active {
+  opacity: 1;
+}
+
+a.tocable {
+  text-decoration: none;
+}
+
+@keyframes girar {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes aparecer {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

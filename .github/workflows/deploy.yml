@@ -23,14 +23,23 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Instalar dependencias
         run: npm ci
 
-      - name: Build web
-        run: npm run build:web
+      - name: Tipos (tsc)
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests (Vitest)
+        run: npm test
+
+      - name: Build (Vite → dist/)
+        run: npm run build
 
       - name: Actualizar config en el VPS (docker-compose.yml, nginx.conf) y levantar servicios
         if: github.event_name == 'push'
@@ -61,5 +70,12 @@ jobs:
         if: github.event_name == 'push'
         run: |
           sleep 5
-          curl -fsS -o /dev/null https://clientes.telemet.com.ar
-          echo "✓ Sitio responde OK"
+          # La página principal y una dirección profunda (fallback de la SPA) devuelven el index nuevo
+          JS=$(grep -o 'assets/index-[^"]*\.js' dist/index.html)
+          for URL in https://clientes.telemet.com.ar/ https://clientes.telemet.com.ar/equipo/123; do
+            curl -fsS -o /tmp/pagina.html "$URL"
+            grep -q "$JS" /tmp/pagina.html || { echo "✗ $URL no sirve la versión nueva ($JS)"; exit 1; }
+          done
+          curl -fsS -o /dev/null "https://clientes.telemet.com.ar/$JS"
+          curl -fsS -o /dev/null https://clientes.telemet.com.ar/manifest.json
+          echo "✓ Sitio responde OK con la versión nueva"
