@@ -7,7 +7,7 @@ import { avisarCambioEquipos, mismoId } from '../lib/equipos';
 import { e, type Estilo } from '../lib/estilo';
 import { equipoService } from '../lib/servicios';
 import { C, FontSizes, FontWeights, Radius, Spacing } from '../lib/tema';
-import { formDesdeEquipo, parametrosParaGuardar, validarConfiguracion, type Errores, type FormConfiguracion } from '../lib/validaciones';
+import { cambiarSigno, formDesdeEquipo, normalizarTemperatura, parametrosParaGuardar, validarConfiguracion, type Errores, type FormConfiguracion } from '../lib/validaciones';
 
 const FORM_VACIO: FormConfiguracion = {
   nombre: '', descripcion: '', ubicacion: '', minima: '', maxima: '', setpoint: '', calibracion: '', retardo: '',
@@ -126,7 +126,7 @@ export default function EquipoConfigurar({ id }: { id: string }) {
         <div style={e(s.filaDoble)}>
           <div style={e(s.campo, { flex: 1 })}>
             <span style={e(s.label)}>Mínima (°C)</span>
-            <Campo estilo={[s.input, !!errores.minima && s.inputError]} valor={form.minima} onCambio={(t) => setField('minima', t)} placeholder="-25" colorPlaceholder={C.textMuted} inputMode="numeric" />
+            <CampoTemperatura error={!!errores.minima} valor={form.minima} onCambio={(t) => setField('minima', t)} placeholder="-25" />
             {error('minima')}
           </div>
 
@@ -134,7 +134,7 @@ export default function EquipoConfigurar({ id }: { id: string }) {
 
           <div style={e(s.campo, { flex: 1 })}>
             <span style={e(s.label)}>Máxima (°C)</span>
-            <Campo estilo={[s.input, !!errores.maxima && s.inputError]} valor={form.maxima} onCambio={(t) => setField('maxima', t)} placeholder="0" colorPlaceholder={C.textMuted} inputMode="numeric" />
+            <CampoTemperatura error={!!errores.maxima} valor={form.maxima} onCambio={(t) => setField('maxima', t)} placeholder="0" />
             {error('maxima')}
           </div>
         </div>
@@ -144,7 +144,7 @@ export default function EquipoConfigurar({ id }: { id: string }) {
         <div style={e(s.campo)}>
           <span style={e(s.label)}>Temperatura deseada / Setpoint (°C)</span>
           <span style={e(s.labelSub)}>Temperatura objetivo de trabajo</span>
-          <Campo estilo={[s.input, !!errores.setpoint && s.inputError]} valor={form.setpoint} onCambio={(t) => setField('setpoint', t)} placeholder="-18" colorPlaceholder={C.textMuted} inputMode="numeric" />
+          <CampoTemperatura error={!!errores.setpoint} valor={form.setpoint} onCambio={(t) => setField('setpoint', t)} placeholder="-18" />
           {error('setpoint')}
         </div>
 
@@ -153,7 +153,7 @@ export default function EquipoConfigurar({ id }: { id: string }) {
         <div style={e(s.campo)}>
           <span style={e(s.label)}>Calibración (°C)</span>
           <span style={e(s.labelSub)}>Corrección de offset del sensor. Suma o resta este valor a la lectura real.</span>
-          <Campo estilo={[s.input, !!errores.calibracion && s.inputError]} valor={form.calibracion} onCambio={(t) => setField('calibracion', t)} placeholder="0.0" colorPlaceholder={C.textMuted} inputMode="numeric" />
+          <CampoTemperatura error={!!errores.calibracion} valor={form.calibracion} onCambio={(t) => setField('calibracion', t)} placeholder="0.0" />
           {error('calibracion')}
         </div>
       </div>
@@ -212,6 +212,24 @@ export default function EquipoConfigurar({ id }: { id: string }) {
   );
 }
 
+
+/**
+ * Campo de temperatura: teclado decimal y un botón ± para el signo (el teclado numérico del iPhone no tiene el menos
+ * y las cámaras de frío trabajan bajo cero). La coma decimal se pasa a punto al escribir.
+ */
+function CampoTemperatura({ valor, onCambio, placeholder, error }: { valor: string; onCambio: (t: string) => void; placeholder: string; error: boolean }) {
+  return (
+    <div style={{ display: 'flex', gap: Spacing.xs }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <Campo estilo={[s.input, error && s.inputError]} valor={valor} onCambio={(t) => onCambio(normalizarTemperatura(t))} placeholder={placeholder} colorPlaceholder={C.textMuted} inputMode="decimal" />
+      </div>
+      <Tocable estilo={s.botonSigno} onPress={() => onCambio(cambiarSigno(valor))} etiqueta="Cambiar signo">
+        <span style={e(s.botonSignoTexto)}>±</span>
+      </Tocable>
+    </div>
+  );
+}
+
 const s: Record<string, Estilo> = {
   container: { flex: 1, backgroundColor: C.background },
   scroll: { padding: Spacing.lg, maxWidth: 600, width: '100%', alignSelf: 'center' },
@@ -227,6 +245,8 @@ const s: Record<string, Estilo> = {
   requerido: { color: C.critico },
   input: { backgroundColor: C.cardAlt, borderWidth: 1, borderColor: C.border, borderRadius: Radius.md, padding: Spacing.sm + 4, color: C.text, fontSize: FontSizes.md },
   inputError: { borderColor: C.critico },
+  botonSigno: { backgroundColor: C.cardAlt, borderWidth: 1, borderColor: C.border, borderRadius: Radius.md, width: 44, alignItems: 'center', justifyContent: 'center' },
+  botonSignoTexto: { color: C.text, fontSize: FontSizes.lg, fontWeight: FontWeights.bold },
   inputMultiline: { height: 72, verticalAlign: 'top' },
   errorText: { color: C.critico, fontSize: FontSizes.xs, marginTop: 4 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: 4 },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  formDesdeEquipo, parametrosParaGuardar, validarAgregar, validarConfiguracion, validarLogin, validarRegistro,
+  cambiarSigno, formDesdeEquipo, normalizarTemperatura, parametrosParaGuardar, validarAgregar, validarConfiguracion, validarLogin, validarRegistro,
   type FormConfiguracion,
 } from './validaciones';
 
@@ -97,3 +97,21 @@ describe('otros formularios', () => {
     expect(validarRegistro({ ...base, password: '123', confirmar: '123' })?.mensaje).toBe('La contraseña debe tener al menos 6 caracteres.');
   });
 });
+
+// Campos de temperatura en el celular (19/11): el teclado numérico del iPhone no tiene el menos (botón ±) y el
+// decimal en español pone coma.
+describe('campos de temperatura', () => {
+  it('± cambia el signo, también de un campo vacío o con espacios', () => {
+    expect(cambiarSigno('18')).toBe('-18')
+    expect(cambiarSigno('-18')).toBe('18')
+    expect(cambiarSigno('')).toBe('-')
+    expect(cambiarSigno('-')).toBe('')
+    expect(cambiarSigno(' 2.5 ')).toBe('-2.5')
+  })
+  it('la coma decimal pasa a punto y el valor valida como número', () => {
+    expect(normalizarTemperatura('-0,5')).toBe('-0.5')
+    expect(normalizarTemperatura('4')).toBe('4')
+    expect(con({ calibracion: normalizarTemperatura('-0,5') })).toEqual({})
+    expect(con({ minima: normalizarTemperatura('-25'), setpoint: normalizarTemperatura('-18,5') })).toEqual({})
+  })
+})

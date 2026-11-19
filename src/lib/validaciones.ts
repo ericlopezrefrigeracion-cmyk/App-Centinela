@@ -63,6 +63,24 @@ export function validarConfiguracion(form: FormConfiguracion): Errores {
   return nuevos;
 }
 
+/**
+ * Lo que se escribe en un campo de temperatura, normalizado: coma decimal a punto (el teclado decimal en español
+ * pone coma y Number("0,5") no es un número). Se aplica al escribir, así lo que se ve es lo que se valida.
+ */
+export function normalizarTemperatura(texto: string): string {
+  return texto.replace(/,/g, '.')
+}
+
+/**
+ * Cambia el signo del valor (botón ±): en el iPhone el teclado numérico no tiene el signo menos y las cámaras de
+ * frío trabajan con temperaturas negativas (por ejemplo -18).
+ */
+export function cambiarSigno(texto: string): string {
+  const t = texto.trim()
+  if (t.startsWith('-')) return t.slice(1)
+  return `-${t}`
+}
+
 /** Cuerpo de PATCH /app/equipos/:id/parametros (calibración 0 y retardo 5 si quedan vacíos). */
 export function parametrosParaGuardar(form: FormConfiguracion) {
   return {
