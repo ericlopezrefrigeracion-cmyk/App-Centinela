@@ -1,6 +1,6 @@
 version: 2
 updates:
-  # App Expo exportada a web (un solo package.json en la raíz).
+  # Web con Vite + React (un solo package.json en la raíz).
   # Cada PR corre las verificaciones del workflow de deploy (pull_request), sin desplegar; el deploy
   # solo corre al aceptarlo en main.
   - package-ecosystem: "npm"
@@ -16,24 +16,6 @@ updates:
       # (con posibles cambios que rompen) quedan cada una en su PR para revisarlas a mano.
       dependencias-menores:
         update-types: ["minor", "patch"]
-        # Expo y React Native van con la versión de Expo: se actualizan juntos con "npx expo install --fix".
-        exclude-patterns: ["expo", "expo-*", "@expo/*", "eslint-config-expo", "react", "react-dom", "react-native", "react-native-*", "@react-native/*", "@react-native-*/*"]
-    ignore:
-      # Mismo motivo: ninguna actualización de estos paquetes se aplica sola (romperían la app).
-      - dependency-name: "expo"
-      - dependency-name: "expo-*"
-      - dependency-name: "@expo/*"
-      - dependency-name: "eslint-config-expo"
-      - dependency-name: "react"
-      - dependency-name: "react-dom"
-      - dependency-name: "react-native"
-      - dependency-name: "react-native-*"
-      - dependency-name: "@react-native/*"
-      - dependency-name: "@react-native-*/*"
-      # TypeScript 7 (compilador nativo) no trae la API de JavaScript que usa Expo al exportar: rompe el build
-      # (19/11/2026, PR #14). Se vuelve a habilitar cuando Expo lo soporte; las 5.x y 6.x siguen llegando.
-      - dependency-name: "typescript"
-        versions: [">=7.0.0"]
     labels:
       - "dependencias"
 

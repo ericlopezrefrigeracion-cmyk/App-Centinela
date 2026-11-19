@@ -1,50 +1,45 @@
-# Welcome to your Expo app 👋
+# Centinela
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicación web (PWA) para que los clientes de Telemet monitoreen la temperatura de sus equipos de frío.
+Producción: https://clientes.telemet.com.ar
 
-## Get started
+## Tecnología
 
-1. Install dependencies
+- **Vite + React 19 + TypeScript**, con React Router.
+- Axios contra la API externa `https://api.telemet.com.ar` (no es parte de este repo).
+- Sin base de datos propia: la sesión se guarda en `localStorage` (`centinela_token`,
+  `centinela_refresh_token`, `centinela_usuario`) y el token se renueva solo (`src/lib/api.ts`).
+- Gráficos en SVG propio; reportes PDF con el diálogo de impresión del navegador (`src/lib/reportes.ts`).
+- Se instala como app: `public/manifest.json`, íconos y metas de Apple en `index.html`. No hay service worker.
 
-   ```bash
-   npm install
-   ```
+## Estructura
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+index.html            página base (manifest, theme-color, metas de instalación)
+public/               manifest, íconos y favicon
+src/App.tsx           navegación: direcciones y pantallas con y sin sesión
+src/pantallas/        una pantalla por archivo (Equipos, Alertas, Historicos, Perfil, Login, ...)
+src/componentes/      modal de avisos, barra de pestañas, encabezado, botones, campos
+src/lib/              API, servicios, lógica (estado de equipos, validaciones, gráficos) y sus tests
+nginx/, docker-compose.yml, init-ssl.sh   servidor (nginx + certbot) en el VPS
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Direcciones: `/`, `/alertas`, `/historicos`, `/perfil`, `/login`, `/registro`, `/verificar-email`,
+`/equipo/agregar`, `/equipo/:id` y `/equipo/configurar/:id`. nginx devuelve `index.html` para todas.
 
-## Learn more
+## Comandos
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npm install
+npm run dev        # servidor local (http://localhost:5173)
+npm run typecheck  # tsc
+npm run lint       # oxlint
+npm test           # Vitest (lo corre GitHub Actions en cada push y PR)
+npm run build      # genera dist/
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Publicación
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Cada push a `main` corre `.github/workflows/deploy.yml`: instala, revisa tipos, lint, tests, arma `dist/`,
+lo sube al VPS (`/opt/centinela/dist`, servido por nginx) y verifica que el dominio sirva la versión nueva.
+Los PR (por ejemplo los de Dependabot) corren las mismas verificaciones sin desplegar.
