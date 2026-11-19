@@ -55,7 +55,8 @@ describe('semanas de Históricos', () => {
     const semanas = generarSemanas(new Date(2026, 10, 19, 15, 0));
     expect(semanas).toHaveLength(8);
     expect(semanas.slice(0, 2).map((s) => s.label)).toEqual(['Semana actual', 'Semana pasada']);
-    expect(semanas[2]!.label).toBe('02/11 — 08/11');
+    // El formato exacto (02/11 o 2/11) depende de los datos de idioma del motor; importan las fechas
+    expect(semanas[2]!.label).toMatch(/^0?2\/11 — 0?8\/11$/);
   });
   it('una semana pasada va del lunes 00:00 al domingo 23:59:59.999 locales', () => {
     const { desde, hasta } = rangoSemana('2026-11-09', false);
