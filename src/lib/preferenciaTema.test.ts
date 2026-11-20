@@ -2,7 +2,7 @@
 // pone en <html> y que el script del primer cuadro haga lo mismo. Los valores esperados salen de la
 // regla escrita (usuario → dispositivo → sistema), no de correr el código.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import css from '../estilos.css?raw';
+import { readFileSync } from 'node:fs';
 import scriptInicial from '../../public/tema-inicial.js?raw';
 import { atributoTema, resolverPreferencia, temaEfectivo } from './preferenciaTema';
 import { aplicarEnDocumento } from './temaNavegador';
@@ -97,6 +97,9 @@ describe('en el documento', () => {
     expect(metas()).toEqual(['#ffffff', '#000000']);
   });
 });
+
+// Vitest reemplaza los .css importados por un texto vacío: se lee el archivo directo
+const css = readFileSync('src/estilos.css', 'utf8');
 
 // Declaraciones de un bloque CSS (sin comentarios ni espacios), para comparar
 function declaraciones(bloque: string): string[] {
