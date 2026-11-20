@@ -1,0 +1,2 @@
+# Los scripts del servidor siempre con LF (con CRLF bash falla en el VPS).
+*.sh text eol=lf

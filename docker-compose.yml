@@ -1,8 +1,16 @@
+# Logs de cada contenedor: 10 MB × 3 (ESTANDARES A7; el daemon.json del host lo mismo, desde el próximo reinicio).
+x-logs: &logs
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   nginx:
     container_name: nginx
     image: nginx:1.27-alpine
     restart: unless-stopped
+    logging: *logs
     # La configuración se monta como carpeta (no archivo suelto): así el deploy la actualiza con git y
     # un "nginx -s reload" la toma, sin reiniciar el contenedor.
     command: ["nginx", "-c", "/etc/nginx/centinela/nginx.conf", "-g", "daemon off;"]
@@ -18,6 +26,7 @@ services:
   certbot:
     image: certbot/certbot
     restart: unless-stopped
+    logging: *logs
     volumes:
       - certbot_data:/etc/letsencrypt
       - certbot_www:/var/www/certbot

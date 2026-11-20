@@ -60,7 +60,23 @@ cada `location`), D6 (equipos y alertas con "Act. HH:MM" y "Actualizar"), D7 (av
 toca al navegador (formatos solo en `formato.ts`, con test guardián) y G1 a G4 (temas, íconos, reportes PDF y campos
 con ±).
 
+**Servidor** (lo instala el deploy con `deploy/servidor.sh`, idempotente, en cada push a `main`; nada a mano):
+A1 (ufw: solo 22/80/443), A2 (fail2ban, jail sshd 5 intentos / 1 h), A3 (SSH solo con clave,
+`00-estandar.conf` validado con `sshd -t`), A5 (swap de 2 GB, swappiness 10), A6 (journal 300 MB / 3 meses),
+A7 (`daemon.json` y `logging` en `docker-compose.yml` de 10 MB × 3; limpieza semanal de Docker el domingo 04:30),
+A8 (unattended-upgrades con reinicio a las 04:30 si hace falta) y A9 (host en hora de Buenos Aires).
+C1: el contenedor `certbot` renueva por webroot cada 12 h y recarga nginx; el deploy prueba la renovación de verdad
+(`certbot renew --dry-run`) una vez por semana y falla si no anda. E3: el servidor del Mayorista vigila cada 5 min
+que `https://clientes.telemet.com.ar/` sirva la app y, una vez por día, que al certificado le queden 20 días o más;
+avisa por email al cambiar de estado (tabla de vigilancia cruzada de ESTANDARES.md). No hay monitor local: el sitio
+es estático, sin API que reiniciar ni clave de email en este servidor; nginx y certbot se levantan solos
+(`restart: unless-stopped`).
+
 No aplican, porque no hay backend ni base propios (la API es `api.telemet.com.ar`, de Telemet): A9 en la parte de
 Postgres, B1-B3 y B5 (no hay imagen propia, tests de base ni migraciones), C3-C7 (archivos, webhooks, sesiones del
-servidor, secretos y logs viven en la API), D1-D5, D8 y D9 (no hay panel de staff), E1-E6, E8, E9 y F (sin backend ni
-medición). Pendiente: A1-A8 del servidor en un `deploy/servidor.sh` y una clave de acceso propia del VPS (A4).
+servidor, secretos y logs viven en la API), D1-D5, D8 y D9 (no hay panel de staff), E1, E2, E4-E6 (sin base no hay
+backup: lo único propio del servidor es el repo y el certificado, que se rehacen con el deploy e `init-ssl.sh`), E8,
+E9 y F (sin backend ni medición).
+
+Pendiente (A4): el deploy entra con una clave compartida (la vieja `vps_access`) y en `authorized_keys` sigue la
+vieja `vps_taller`; falta una clave de deploy propia de Centinela en el secreto `VPS_SSH_KEY` y sacar esas dos.

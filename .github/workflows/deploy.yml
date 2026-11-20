@@ -51,12 +51,17 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          # La primera vez servidor.sh instala paquetes (apt en un VPS de 512 MB): margen de sobra.
+          command_timeout: 20m
           script: |
             set -e
             cd /opt/centinela
             ANTES=$(git rev-parse HEAD)
             git fetch origin main
             git reset --hard origin/main
+            # Configuración del servidor (ESTANDARES A1-A9): firewall, fail2ban, SSH, swap, journal, Docker y
+            # actualizaciones. Idempotente: solo toca lo que cambió.
+            bash deploy/servidor.sh
             # Probar la configuración nueva de nginx antes de usarla; si falla, volver a la anterior (ESTANDARES B6)
             if ! docker compose run --rm --no-deps -T nginx nginx -t -c /etc/nginx/centinela/nginx.conf; then
               echo "✗ nginx -t falló: vuelvo a la configuración anterior"
@@ -65,6 +70,22 @@ jobs:
             fi
             docker compose up -d
             docker exec nginx nginx -s reload
+            # Renovación del SSL verificada de verdad una vez por semana (ESTANDARES C1): si el desafío webroot no
+            # funciona, el deploy falla ahora y no el día que vence. Si el loop del contenedor certbot está
+            # renovando en ese momento ("Another instance"), espera y reintenta.
+            MARCA=/var/lib/centinela/ultima-prueba-renovacion
+            mkdir -p /var/lib/centinela
+            if [ ! -f "$MARCA" ] || [ -n "$(find "$MARCA" -mtime +7)" ]; then
+              OK=no
+              for _ in 1 2 3 4 5 6; do
+                if SALIDA=$(docker compose exec -T certbot certbot renew --dry-run --no-random-sleep-on-renew \
+                    --webroot --webroot-path=/var/www/certbot 2>&1); then OK=si; break; fi
+                echo "$SALIDA" | grep -q "Another instance" || break
+                sleep 15
+              done
+              if [ "$OK" = si ]; then touch "$MARCA"; echo "✓ Renovación del SSL probada (dry-run)"
+              else echo "$SALIDA" | tail -15; echo "✗ La renovación automática del SSL falla"; exit 1; fi
+            fi
 
       - name: Subir dist/ al VPS
         if: github.event_name == 'push'
