@@ -8,7 +8,7 @@ x-logs: &logs
 services:
   nginx:
     container_name: nginx
-    image: nginx:1.27-alpine
+    image: nginx:1.30.7-alpine
     restart: unless-stopped
     logging: *logs
     # La configuración se monta como carpeta (no archivo suelto): así el deploy la actualiza con git y
