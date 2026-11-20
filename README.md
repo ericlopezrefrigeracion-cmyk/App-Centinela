@@ -14,6 +14,11 @@ Producción: https://clientes.telemet.com.ar
 - **Dos temas automáticos** según el modo del teléfono o la computadora (`prefers-color-scheme`):
   oscuro "Grafito" y claro "Clara". Los colores son variables CSS en `src/estilos.css`; `src/lib/tema.ts`
   las expone como `C.*` (`var(--c-…)`) para los estilos en línea, así el cambio es en vivo. Tipografía Inter.
+- **Selector de tema Claro / Auto / Oscuro** (por defecto Auto) en el Perfil y en el botón de ícono del encabezado
+  de Equipos (`src/componentes/SelectorTema.tsx`). Sin backend propio, se guarda solo en el dispositivo (localStorage
+  `tema`). Con Claro u Oscuro se pone `data-theme` en `<html>`, que manda sobre `prefers-color-scheme`;
+  `public/tema-inicial.js` lo aplica antes de pintar (sin parpadeo). Lógica pura en `src/lib/preferenciaTema.ts`,
+  navegador en `src/lib/temaNavegador.ts`, tests en `src/lib/preferenciaTema.test.ts`.
 - Íconos SVG de trazo en `src/componentes/iconos.tsx` (nada de emojis; lo vigila `src/lib/guardian.test.ts`).
 - Fechas, horas y números solo por `src/lib/formato.ts`: hora de Buenos Aires, 24 h, coma decimal y signo menos.
 - Reportes PDF siempre claros, en A4 (`src/lib/reportes.ts`).

@@ -3,6 +3,8 @@
  * (prefers-color-scheme). Oscuro = "Grafito"; claro = "Clara". Los estilos en línea de cada pantalla
  * usan estas variables (ver src/lib/tema.ts), así que al cambiar el modo del sistema la app cambia
  * en vivo, sin recargar.
+ * El usuario puede fijar Claro u Oscuro desde el Perfil: data-theme="light" | "dark" en <html> manda
+ * sobre el modo del sistema (ver src/lib/temaNavegador.ts); sin data-theme, sigue al sistema.
  */
 :root {
   color-scheme: light dark;
@@ -59,7 +61,7 @@
 }
 
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme="dark"]) {
     --c-fondo: #f4f6f8;
     --c-tarjeta: #ffffff;
     --c-control: #f7f9fb;
@@ -104,6 +106,54 @@
     --c-grafico-grilla: #e2e7ed;
     --c-grafico-corte: #8a96a3;
   }
+}
+
+/* Claro elegido a mano (selector Claro / Auto / Oscuro): mismos valores que el bloque de arriba.
+   Un test guardián (src/lib/preferenciaTema.test.ts) revisa que los dos bloques sean iguales. */
+:root[data-theme="light"] {
+  --c-fondo: #f4f6f8;
+  --c-tarjeta: #ffffff;
+  --c-control: #f7f9fb;
+  --c-campo: #ffffff;
+  --c-borde: #e2e7ed;
+  --c-borde-control: #d5dce4;
+  --c-pista: #e9edf2;
+  --c-sombra: 0 1px 2px rgba(16, 24, 32, 0.05);
+  --c-velo: rgba(16, 24, 32, 0.45);
+
+  --c-texto: #101820;
+  --c-texto-sub: #5a6776;
+  --c-texto-suave: #5a6776;
+
+  --c-marca: #7ed321;
+  --c-sobre-marca: #101820;
+  --c-logo-met: #4e9a12;
+
+  --c-verde: #2f7a0a;
+  --c-verde-punto: #4e9a12;
+  --c-verde-fondo: #e8f5dc;
+  --c-ambar: #8a5200;
+  --c-ambar-punto: #d98a00;
+  --c-ambar-fondo: #fdf0d8;
+  --c-rojo: #c62828;
+  --c-rojo-punto: #c62828;
+  --c-rojo-fondo: #fff6f6;
+  --c-gris: #5a6776;
+  --c-gris-punto: #8a96a3;
+  --c-gris-fondo: #eef1f4;
+
+  /* Tarjeta en estado crítico: en claro, fondo rojo suave */
+  --c-critico-tarjeta: #fff6f6;
+  --c-critico-borde: #f3c7c7;
+  --c-critico-pista: #f1dada;
+  --c-critico-barra: #c62828;
+
+  --c-temp-atencion: #8a5200;
+  --c-temp-critico: #c62828;
+
+  --c-grafico-linea: #4e9a12;
+  --c-grafico-grilla: #e2e7ed;
+  --c-grafico-corte: #8a96a3;
 }
 
 /*

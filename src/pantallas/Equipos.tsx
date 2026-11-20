@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { showAlert } from '../componentes/AlertProvider';
 import { Icono, IconoSenal } from '../componentes/iconos';
 import { useTirarParaRefrescar } from '../componentes/TirarParaRefrescar';
+import { BotonTema } from '../componentes/SelectorTema';
 import { AvisoError, BotonIcono, Desplazable, Spinner, Tocable, tarjeta, useBreakpoint } from '../componentes/ui';
 import { useAuth } from '../contexto/AuthContext';
 import {
@@ -181,6 +182,7 @@ export default function Equipos() {
         </div>
         <div style={e(s.botonesHeader)}>
           <BotonIcono icono="actualizar" etiqueta="Actualizar" onPress={() => cargarEquipos(true)} fondo={C.card} borde={C.border} color={C.textSub} />
+          <BotonTema />
           <BotonIcono icono="salir" etiqueta="Cerrar sesión" onPress={handleLogout} fondo={C.card} borde={C.border} color={C.textSub} />
         </div>
       </div>
@@ -227,6 +229,8 @@ const s: Record<string, Estilo> = {
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12,
     paddingTop: 22, paddingBottom: 14, paddingHorizontal: 20, width: '100%', maxWidth: 1200, alignSelf: 'center',
+    // Por encima de la lista: el menú del tema se despliega sobre las tarjetas
+    zIndex: 2,
   },
   titulos: { gap: 2, flexShrink: 1, minWidth: 0 },
   logo: { color: C.text, fontSize: FontSizes.xl, fontWeight: FontWeights.bold, letterSpacing: -0.3 },

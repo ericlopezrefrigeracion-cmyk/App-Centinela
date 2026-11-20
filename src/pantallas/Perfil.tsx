@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { showAlert } from '../componentes/AlertProvider';
 import { Icono } from '../componentes/iconos';
 import { TituloPestana } from '../componentes/navegacion';
+import { SelectorTema } from '../componentes/SelectorTema';
 import { Boton, Desplazable, Spinner, Tocable, tarjeta } from '../componentes/ui';
 import { useAuth } from '../contexto/AuthContext';
 import { e, type Estilo } from '../lib/estilo';
@@ -90,6 +91,12 @@ export default function Perfil() {
           <FilaDato label="CUIT" valor={usuario?.cuit ?? ''} ultima />
         </div>
 
+        <span style={e(s.seccionTitulo)}>Tema</span>
+        <div style={e(s.seccion, s.seccionTema)}>
+          <SelectorTema />
+          <span style={e(s.notaTema)}>Auto sigue el modo del teléfono o la computadora. Se guarda en este dispositivo.</span>
+        </div>
+
         <span style={e(s.seccionTitulo)}>Soporte</span>
         <div style={e(s.seccion)}>
           <Tocable estilo={s.linkRow} onPress={() => abrir('https://wa.me/543385470666')} opacidadActiva={0.6}>
@@ -130,6 +137,9 @@ const s: Record<string, Estilo> = {
   filaDato: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, minHeight: 48, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: C.border },
   filaLabel: { fontSize: FontSizes.sm, color: C.textSub },
   filaValor: { fontSize: FontSizes.sm, color: C.text, fontWeight: FontWeights.medium, textAlign: 'right' },
+
+  seccionTema: { paddingVertical: Spacing.md, gap: Spacing.sm },
+  notaTema: { fontSize: FontSizes.xs, color: C.textSub },
 
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, borderBottomWidth: 1, borderBottomColor: C.border },
   linkText: { fontSize: FontSizes.md, color: C.text, flex: 1 },
