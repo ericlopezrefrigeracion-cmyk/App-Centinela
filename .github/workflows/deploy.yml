@@ -5,6 +5,8 @@ on:
     branches: [main]
   # En cada PR (los de Dependabot, por ejemplo) corren las verificaciones y los tests, sin desplegar.
   pull_request:
+  # Para volver a desplegar sin cambios (por ejemplo, después de rotar la clave del deploy).
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -45,7 +47,7 @@ jobs:
         run: npm run build
 
       - name: Actualizar config en el VPS (docker-compose.yml, nginx.conf) y levantar servicios
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -88,7 +90,7 @@ jobs:
             fi
 
       - name: Subir dist/ al VPS
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -99,7 +101,7 @@ jobs:
           strip_components: 1
 
       - name: Verificar que el sitio responde
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         run: |
           sleep 5
           # La página principal y una dirección profunda (fallback de la SPA) devuelven el index nuevo
