@@ -83,5 +83,7 @@ servidor, secretos y logs viven en la API), D1-D5, D8 y D9 (no hay panel de staf
 backup: lo único propio del servidor es el repo y el certificado, que se rehacen con el deploy e `init-ssl.sh`), E8,
 E9 y F (sin backend ni medición).
 
-Pendiente (A4): el deploy entra con una clave compartida (la vieja `vps_access`) y en `authorized_keys` sigue la
-vieja `vps_taller`; falta una clave de deploy propia de Centinela en el secreto `VPS_SSH_KEY` y sacar esas dos.
+A4 (2026-11-20): el deploy entra con su propia clave (secreto `VPS_SSH_KEY`); las claves compartidas viejas se
+sacaron del servidor.
+
+Instrucciones para Claude Code en `CLAUDE.md`; estado, decisiones y pendientes en `docs/PROGRESO.md`.
