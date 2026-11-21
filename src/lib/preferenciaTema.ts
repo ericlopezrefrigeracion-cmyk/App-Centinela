@@ -1,5 +1,5 @@
 // Preferencia de tema: Claro / Auto / Oscuro (ESTANDARES G1).
-// Lógica pura, sin DOM: la misma forma en los proyectos (Al toque, Ticketya, Mayorista, AltokeAds,
+// Lógica pura, sin DOM: la misma forma en los proyectos (Al toque, Ticketya, Mayorista, AltoqueAds,
 // Centinela). El que decide es, en orden: la preferencia del usuario (si tiene cuenta y la guardó),
 // la copia guardada en el dispositivo (localStorage) y, si no hay ninguna, el modo del sistema.
 // Lo que se aplica en el navegador está en temaNavegador.ts y en public/tema-inicial.js.

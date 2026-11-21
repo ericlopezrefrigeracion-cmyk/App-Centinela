@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copia del de Web-AltokeAds (el mismo en los proyectos): lo propio de Centinela es el nombre de 52centinela-reinicio
+# Copia del de Web-AltoqueAds (el mismo en los proyectos): lo propio de Centinela es el nombre de 52centinela-reinicio
 # y que no hay base ni API (A9 en la parte de Postgres no aplica).
 # Configuración del servidor (ESTANDARES.md, sección A). La corre el deploy en cada push a main: es
 # idempotente (escribe cada archivo solo si cambió y recarga solo lo que cambió), así un servidor nuevo

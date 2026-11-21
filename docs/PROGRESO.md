@@ -44,6 +44,8 @@ TypeScript el 2026-11-19.
   seguía viendo el viejo) y las cabeceras van en un snippet incluido en cada `location`.
 - **2026-11-20 — Clave de deploy propia** (ESTANDARES A4, con autorización de Eric): `VPS_SSH_KEY` con la clave de
   Centinela; se sacaron del servidor las claves compartidas viejas. Quedan la de acceso de Eric y la del deploy.
+- **2026-11-21 — La marca del panel de anuncios es AltoqueAds** (pedido de Eric; antes "AltokeAds"): solo cambian
+  dos comentarios, Centinela no manda eventos al panel.
 
 ## Pendientes conocidos
 
