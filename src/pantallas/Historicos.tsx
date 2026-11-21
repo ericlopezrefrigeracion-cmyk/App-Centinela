@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { showAlert } from '../componentes/AlertProvider';
+import { Ayuda } from '../componentes/Ayuda';
 import { Icono } from '../componentes/iconos';
 import { TituloPestana } from '../componentes/navegacion';
 import { Boton, Desplazable, Spinner, Tocable, tarjeta } from '../componentes/ui';
@@ -9,7 +10,7 @@ import { e, type Estilo } from '../lib/estilo';
 import { generarSemanas, rangoSemana } from '../lib/graficos';
 import { abrirVentanaReporte, exportarReportePDF, htmlReporteSemanal, nombreReporteSemanal } from '../lib/reportes';
 import { alertaService, datosService, equipoService } from '../lib/servicios';
-import { C, FontSizes, FontWeights, Radius, Spacing } from '../lib/tema';
+import { C, FontSizes, FontWeights, Spacing } from '../lib/tema';
 
 export default function Historicos() {
   // Puede recibir ?equipoId= para preseleccionar un equipo
@@ -137,13 +138,10 @@ export default function Historicos() {
           {semanas.map((sem) => opcion(sem.fechaInicio, sem.label, sem.fechaInicio === semanaSeleccionada, () => setSemana(sem.fechaInicio)))}
         </div>
 
-        <div style={e(s.infoBox)}>
-          <Icono nombre="info" tamano={18} color={C.textSub} />
-          <span style={e(s.infoText)}>
-            El reporte incluye todas las lecturas de temperatura y alertas
-            de la semana seleccionada en formato PDF.
-          </span>
-        </div>
+        <Ayuda>
+          El reporte incluye todas las lecturas de temperatura y alertas
+          de la semana seleccionada en formato PDF.
+        </Ayuda>
 
         <Boton icono="descarga" onPress={handleDescargar} cargando={descargando}>Descargar PDF</Boton>
 
@@ -168,6 +166,4 @@ const s: Record<string, Estilo> = {
   opcionBtnActivo: { backgroundColor: C.verdeFondo },
   opcionText: { color: C.text, fontSize: FontSizes.md },
   opcionTextActivo: { color: C.verde, fontWeight: FontWeights.semibold },
-  infoBox: { ...tarjeta, flexDirection: 'row', padding: Spacing.md, gap: 12, marginBottom: Spacing.lg, alignItems: 'flex-start', borderRadius: Radius.md },
-  infoText: { color: C.textSub, fontSize: FontSizes.sm, flex: 1, lineHeight: 20 },
 };

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { showAlert } from '../componentes/AlertProvider';
+import { avisarAyudasNoGuardadas } from '../componentes/Ayuda';
 import { Icono } from '../componentes/iconos';
 import { TituloPestana } from '../componentes/navegacion';
 import { SelectorTema } from '../componentes/SelectorTema';
-import { Boton, Desplazable, Spinner, Tocable, tarjeta } from '../componentes/ui';
+import { Boton, Desplazable, Interruptor, Spinner, Tocable, tarjeta } from '../componentes/ui';
 import { useAuth } from '../contexto/AuthContext';
+import { elegirAyudasVisibles, useAyudasVisibles } from '../lib/ayudas';
 import { e, type Estilo } from '../lib/estilo';
 import { authService } from '../lib/servicios';
 import { C, FontSizes, FontWeights, Spacing } from '../lib/tema';
@@ -32,6 +34,7 @@ function abrir(url: string) {
 
 export default function Perfil() {
   const { logout } = useAuth();
+  const ayudasVisibles = useAyudasVisibles();
   const [usuario, setUsuario] = useState<DatosPerfil | null>(null);
   const [cargando, setCargando] = useState(true);
 
@@ -97,6 +100,21 @@ export default function Perfil() {
           <span style={e(s.notaTema)}>Auto sigue el modo del teléfono o la computadora. Se guarda en este dispositivo.</span>
         </div>
 
+        <span style={e(s.seccionTitulo)}>Ayudas</span>
+        <div style={e(s.seccion, s.seccionTema)}>
+          <div style={e(s.filaInterruptor)}>
+            <span style={e(s.linkText)}>Mostrar las ayudas de cada pantalla</span>
+            <Interruptor
+              valor={ayudasVisibles}
+              etiqueta="Mostrar las ayudas de cada pantalla"
+              onCambio={(v) => {
+                if (!elegirAyudasVisibles(v)) avisarAyudasNoGuardadas();
+              }}
+            />
+          </div>
+          <span style={e(s.notaTema)}>La X de una ayuda las oculta todas. Se guarda en este dispositivo.</span>
+        </div>
+
         <span style={e(s.seccionTitulo)}>Soporte</span>
         <div style={e(s.seccion)}>
           <Tocable estilo={s.linkRow} onPress={() => abrir('https://wa.me/543385470666')} opacidadActiva={0.6}>
@@ -140,6 +158,7 @@ const s: Record<string, Estilo> = {
 
   seccionTema: { paddingVertical: Spacing.md, gap: Spacing.sm },
   notaTema: { fontSize: FontSizes.xs, color: C.textSub },
+  filaInterruptor: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, borderBottomWidth: 1, borderBottomColor: C.border },
   linkText: { fontSize: FontSizes.md, color: C.text, flex: 1 },

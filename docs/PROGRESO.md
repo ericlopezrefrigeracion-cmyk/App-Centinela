@@ -3,7 +3,7 @@
 Primer commit: 2026-03-20 (app Expo / React Native para Android). Web desde 2026-09-21; reescrita con Vite + React +
 TypeScript el 2026-11-19.
 
-## Estado (al 2026-11-20)
+## Estado (al 2026-11-21)
 
 - **Pantallas** (`src/pantallas/`): Equipos (estado, ordenados por urgencia, resumen), Detalle de equipo (gráfico SVG
   propio), Configurar equipo (rangos de temperatura con ±), Agregar equipo, Alertas, Históricos (reporte PDF),
@@ -47,7 +47,16 @@ TypeScript el 2026-11-19.
 - **2026-11-21 — La marca del panel de anuncios es AltoqueAds** (pedido de Eric; antes se escribía con "k"): solo cambian
   dos comentarios, Centinela no manda eventos al panel.
 
+- **2026-11-21 — Ayudas de pantalla que se pueden ocultar** (pedido de Eric, "todas de una vez"): los dos recuadros de
+  ayuda (Agregar equipo e Históricos) usan el componente único `src/componentes/Ayuda.tsx`; su X ("Ocultar las
+  ayudas", 44 px) oculta todas al instante y Perfil → Ayudas → "Mostrar las ayudas de cada pantalla" las vuelve a
+  mostrar. Estado compartido en `src/lib/ayudas.ts`. Se guarda **en el dispositivo** (clave
+  `centinela_ayudas_ocultas`), no en la cuenta: la API de Telemet no guarda preferencias y no hay base propia (igual
+  que el tema). Si falla el guardado, vuelven y se avisa. Toda ayuda nueva va con `<Ayuda>`.
+
 ## Pendientes conocidos
+
+- Ayudas ocultas y tema valen por dispositivo: pasarían a la cuenta solo si Telemet agrega preferencias a su API.
 
 - En `/opt/centinela/dist` quedan archivos viejos de Expo (`_expo/`, `assets/node_modules`) porque el scp no borra:
   inofensivos.

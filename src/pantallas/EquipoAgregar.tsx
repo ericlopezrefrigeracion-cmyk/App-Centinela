@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { showAlert } from '../componentes/AlertProvider';
 import { volver } from '../componentes/navegacion';
-import { Icono } from '../componentes/iconos';
+import { Ayuda } from '../componentes/Ayuda';
 import { Boton, Campo, campoTexto, Desplazable, tarjeta } from '../componentes/ui';
 import { avisarCambioEquipos } from '../lib/equipos';
 import { e, type Estilo } from '../lib/estilo';
 import { equipoService } from '../lib/servicios';
-import { C, FontSizes, FontWeights, Radius, Spacing } from '../lib/tema';
+import { C, FontSizes, FontWeights, Spacing } from '../lib/tema';
 import { mensajeDeError, validarAgregar, type Errores } from '../lib/validaciones';
 
 type Clave = 'id' | 'nombre' | 'descripcion' | 'ubicacion';
@@ -77,13 +77,10 @@ export default function EquipoAgregar() {
         </div>
       </div>
 
-      <div style={e(s.infoBox)}>
-        <Icono nombre="info" tamano={18} color={C.textSub} />
-        <span style={e(s.infoText)}>
-          Una vez agregado el equipo, podrás configurar los rangos de temperatura,
-          alertas y otros parámetros desde la pantalla de configuración.
-        </span>
-      </div>
+      <Ayuda>
+        Una vez agregado el equipo, podrás configurar los rangos de temperatura,
+        alertas y otros parámetros desde la pantalla de configuración.
+      </Ayuda>
 
       <div style={e(s.botones)}>
         <Boton icono="mas" onPress={handleAgregar} cargando={cargando}>Agregar equipo</Boton>
@@ -108,7 +105,5 @@ const s: Record<string, Estilo> = {
   inputError: { borderColor: C.rojo },
   inputMultiline: { height: 88, verticalAlign: 'top' },
   errorText: { color: C.rojo, fontSize: FontSizes.xs, marginTop: Spacing.xs },
-  infoBox: { ...tarjeta, flexDirection: 'row', borderRadius: Radius.md, padding: Spacing.md, gap: 12, marginBottom: Spacing.lg, alignItems: 'flex-start' },
-  infoText: { color: C.textSub, fontSize: FontSizes.sm, flex: 1, lineHeight: 20 },
   botones: { gap: Spacing.sm },
 };
