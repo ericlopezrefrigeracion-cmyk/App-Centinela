@@ -1,5 +1,6 @@
-// "Tirar para actualizar" de la app instalada (ESTANDARES D6). Se monta una sola vez en la raíz de la app y solo se
-// activa en modo standalone con pantalla táctil (en el navegador queda el gesto nativo). Tirando hacia abajo desde
+// "Tirar para actualizar" (ESTANDARES D6). Se monta una sola vez en la raíz de la app y se activa en modo standalone
+// con pantalla táctil (en el navegador queda el gesto nativo); con `tambienEnNavegador` (apps cuyo contenido se
+// desplaza dentro de un contenedor, donde el gesto nativo no anda) se activa en cualquier pantalla táctil. Tirando hacia abajo desde
 // arriba de todo aparece un círculo con la flecha; al soltar pasado el umbral vuelve a cargar los datos de la pantalla
 // (las recargas que registró cada indicador "Act. HH:MM" con useRecargaDePantalla) o, si no hay, la página entera.
 // No arranca con un modal abierto, dentro de una lista desplazada, en campos de texto ni en zonas `data-sin-tirar`.
@@ -25,14 +26,21 @@ type Fase = 'quieto' | 'tirando' | 'actualizando'
 // Tiempo mínimo con el círculo girando, para que se vea que actualizó aunque la respuesta llegue enseguida.
 const GIRO_MINIMO_MS = 500
 
-export function TirarParaActualizar({ recargarPagina }: { recargarPagina?: () => void } = {}) {
+export interface PropsTirarParaActualizar {
+  /** Qué hacer si la pantalla no registró ninguna recarga (por defecto, recargar la página). */
+  recargarPagina?: () => void
+  /** También en el navegador (no instalada), en cualquier pantalla táctil: para apps con scroll dentro de un contenedor. */
+  tambienEnNavegador?: boolean
+}
+
+export function TirarParaActualizar({ recargarPagina, tambienEnNavegador = false }: PropsTirarParaActualizar = {}) {
   const [fase, setFase] = useState<Fase>('quieto')
   const [distancia, setDistancia] = useState(0)
   const recargaPagina = useRef(recargarPagina)
   recargaPagina.current = recargarPagina
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !debeActivarse(leerEntorno(window))) return
+    if (typeof window === 'undefined' || !debeActivarse(leerEntorno(window), tambienEnNavegador)) return
     const raiz = document.documentElement
     // Que el navegador no haga su propio tirón ni el rebote encima del nuestro.
     const overscrollAntes = raiz.style.overscrollBehaviorY
@@ -105,7 +113,7 @@ export function TirarParaActualizar({ recargarPagina }: { recargarPagina?: () =>
       document.removeEventListener('touchend', alSoltar, opcionesPasivas)
       document.removeEventListener('touchcancel', alSoltar, opcionesPasivas)
     }
-  }, [])
+  }, [tambienEnNavegador])
 
   const visible = fase !== 'quieto' || distancia > 0
   const listo = fase === 'actualizando' || distancia >= UMBRAL_PX

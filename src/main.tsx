@@ -21,8 +21,8 @@ createRoot(document.getElementById('root')!).render(
           <BrowserRouter>
             <App />
             <AvisoVersion />
-            {/* Tirar para actualizar en la app instalada (D6); en el navegador queda el gesto nativo */}
-            <TirarParaActualizar />
+            {/* Tirar para actualizar (D6). El contenido se desplaza dentro de .desplazable (no el documento): el gesto del navegador no anda, va el propio en cualquier pantalla táctil. */}
+            <TirarParaActualizar tambienEnNavegador />
           </BrowserRouter>
         </AuthProvider>
       </AlertProvider>

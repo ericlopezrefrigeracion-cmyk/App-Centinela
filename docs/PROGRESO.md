@@ -13,7 +13,7 @@ TypeScript el 2026-11-19.
 - **Interfaz**: dos temas automáticos, oscuro "Grafito" y claro "Clara", con selector Claro / Auto / Oscuro en el
   Perfil y en el encabezado de Equipos solo en la computadora (en el celular, solo en Perfil); íconos SVG; "Act.
   HH:MM" en equipos y alertas, con "Actualizar" solo en la computadora; aviso de versión nueva; tirar para
-  actualizar en la app instalada (componente común, 2026-11-27).
+  actualizar en cualquier pantalla táctil (componente común con `tambienEnNavegador`, 2026-11-27).
 - **Reportes PDF**: por el diálogo de impresión del navegador, siempre claros, A4, con HTML escapado.
 - **Servidor**: según ESTANDARES A1-A9 por `deploy/servidor.sh` en cada deploy (2026-11-20); SSL con renovación
   probada una vez por semana (C1); cabeceras con CSP (C2); verificación en el dominio después de cada deploy (B7);
@@ -60,10 +60,9 @@ TypeScript el 2026-11-19.
   tema (queda en Perfil) y Alertas no muestra Actualizar; la hora "Act. HH:MM" y el refresco de cada minuto siguen.
   El "tirar para refrescar" propio (`TirarParaRefrescar.tsx`, andaba en cualquier pantalla táctil) se reemplazó por
   el componente común `src/componentes/TirarParaActualizar.tsx` (+ `tirarParaActualizarEstado.ts` y `.css`, copia de
-  `Proyectos/plantillas/tirar-para-actualizar/`), montado una vez en `main.tsx`: solo en la app instalada
-  (standalone) y táctil, desde arriba de todo, sin modal abierto. Recarga los datos de la pestaña visible
-  (`RecargaDePantalla.tsx`: Equipos y Alertas, que quedan montadas ocultas) o, si no hay, la página. En el navegador
-  del celular queda el gesto nativo.
+  `Proyectos/plantillas/tirar-para-actualizar/`), montado una vez en `main.tsx` con `tambienEnNavegador`: en cualquier pantalla táctil (instalada o
+  en el navegador, como el viejo, porque el contenido se desplaza dentro de `.desplazable` y el gesto nativo no anda), desde arriba de todo, sin modal abierto. Recarga los datos de la pestaña visible
+  (`RecargaDePantalla.tsx`: Equipos y Alertas, que quedan montadas ocultas) o, si no hay, la página.
 
 ## Pendientes conocidos
 

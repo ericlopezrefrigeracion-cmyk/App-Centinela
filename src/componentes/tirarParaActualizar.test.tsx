@@ -15,6 +15,12 @@ describe('tirar para actualizar: cuándo se activa', () => {
     expect(debeActivarse({ standalone: true, tactil: false })).toBe(false)
   })
 
+  it('con tambienEnNavegador (scroll dentro de un contenedor), en cualquier pantalla táctil', () => {
+    expect(debeActivarse({ standalone: false, tactil: true }, true)).toBe(true)
+    expect(debeActivarse({ standalone: false, tactil: false }, true)).toBe(false)
+    expect(debeActivarse({ standalone: true, tactil: true }, true)).toBe(true)
+  })
+
   it('lee display-mode, navigator.standalone del iPhone y pointer coarse', () => {
     const ventana = (activas: string[], standalone?: boolean) => ({
       matchMedia: (c: string) => ({ matches: activas.includes(c) }),

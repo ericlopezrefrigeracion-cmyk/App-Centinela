@@ -42,9 +42,14 @@ export interface EntornoTirar {
   tactil: boolean
 }
 
-/** Solo en la app instalada y en pantallas táctiles; en el navegador queda el gesto nativo. */
-export function debeActivarse(entorno: EntornoTirar): boolean {
-  return entorno.standalone && entorno.tactil
+/**
+ * Por defecto solo en la app instalada y en pantallas táctiles (en el navegador queda el gesto nativo).
+ * `tambienEnNavegador`: para las apps cuyo contenido se desplaza dentro de un contenedor (no el documento), donde el
+ * gesto del navegador no funciona: entonces se activa en cualquier pantalla táctil. Regla de fondo: en el celular
+ * siempre se puede tirar para actualizar.
+ */
+export function debeActivarse(entorno: EntornoTirar, tambienEnNavegador = false): boolean {
+  return entorno.tactil && (entorno.standalone || tambienEnNavegador)
 }
 
 interface VentanaMinima {
