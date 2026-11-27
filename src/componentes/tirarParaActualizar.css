@@ -1,0 +1,56 @@
+/* "Tirar para actualizar" (ESTANDARES D6). Fuente única: Proyectos/plantillas/tirar-para-actualizar/.
+   Sin colores sueltos: cada proyecto define estas variables con las de su tema (claro y oscuro, G1), en su CSS:
+     --tpa-fondo    fondo del círculo (el de las tarjetas)
+     --tpa-texto    flecha mientras se tira
+     --tpa-listo    flecha cuando ya alcanza para actualizar (el color de marca)
+     --tpa-borde    borde del círculo
+   Si falta alguna, usa los colores del sistema (Canvas / CanvasText), que siguen el color-scheme del modo.
+   Compatible con Chrome 109: sin :has(), sin light-dark(), sin oklch. */
+
+.tpa {
+  position: fixed;
+  left: 50%;
+  top: calc(env(safe-area-inset-top, 0px) - 44px);
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  border: 1px solid var(--tpa-borde, GrayText);
+  background: var(--tpa-fondo, Canvas);
+  color: var(--tpa-texto, CanvasText);
+  box-shadow: 0 2px 8px var(--tpa-sombra, transparent);
+  pointer-events: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+/* Mientras el dedo tira, el círculo lo sigue sin demora. */
+.tpa.tpa-siguiendo { transition: none; }
+.tpa.tpa-listo { color: var(--tpa-listo, var(--tpa-texto, CanvasText)); }
+
+.tpa-flecha { width: 22px; height: 22px; }
+.tpa-girando { animation: tpa-giro 0.8s linear infinite; }
+@keyframes tpa-giro { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .tpa, .tpa-girando { transition: none; animation: none; }
+}
+
+/* Solo para lectores de pantalla ("Actualizando"). */
+.tpa-lector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Criterio único de "celular" (CONSULTA_CELULAR en tirarParaActualizarEstado.ts): lo que lleva esta clase no se ve
+   en el celular. Se usa en el botón "Actualizar" del indicador (D6) y en el selector de tema de la barra (G1). */
+@media (max-width: 639px) {
+  .tpa-oculto-celular { display: none !important; }
+}

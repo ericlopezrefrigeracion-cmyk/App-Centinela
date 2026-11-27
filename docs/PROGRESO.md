@@ -11,8 +11,9 @@ TypeScript el 2026-11-19.
   vuelven al equipo.
 - **Sesión**: tokens de la API de Telemet en `localStorage`, renovación automática (`src/lib/api.ts`).
 - **Interfaz**: dos temas automáticos, oscuro "Grafito" y claro "Clara", con selector Claro / Auto / Oscuro en el
-  Perfil y en el encabezado de Equipos (2026-11-20); íconos SVG; "Act. HH:MM" y "Actualizar" en equipos y alertas;
-  aviso de versión nueva; tirar para refrescar.
+  Perfil y en el encabezado de Equipos solo en la computadora (en el celular, solo en Perfil); íconos SVG; "Act.
+  HH:MM" en equipos y alertas, con "Actualizar" solo en la computadora; aviso de versión nueva; tirar para
+  actualizar en la app instalada (componente común, 2026-11-27).
 - **Reportes PDF**: por el diálogo de impresión del navegador, siempre claros, A4, con HTML escapado.
 - **Servidor**: según ESTANDARES A1-A9 por `deploy/servidor.sh` en cada deploy (2026-11-20); SSL con renovación
   probada una vez por semana (C1); cabeceras con CSP (C2); verificación en el dominio después de cada deploy (B7);
@@ -53,6 +54,16 @@ TypeScript el 2026-11-19.
   mostrar. Estado compartido en `src/lib/ayudas.ts`. Se guarda **en el dispositivo** (clave
   `centinela_ayudas_ocultas`), no en la cuenta: la API de Telemet no guarda preferencias y no hay base propia (igual
   que el tema). Si falla el guardado, vuelven y se avisa. Toda ayuda nueva va con `<Ayuda>`.
+
+- **2026-11-27 — Celular sin botón Actualizar ni selector de tema en el inicio** (pedido de Eric, ESTANDARES D6 y G1):
+  en pantallas de hasta 639 px (criterio único, clase `tpa-oculto-celular`) Equipos ya no muestra Actualizar ni el
+  tema (queda en Perfil) y Alertas no muestra Actualizar; la hora "Act. HH:MM" y el refresco de cada minuto siguen.
+  El "tirar para refrescar" propio (`TirarParaRefrescar.tsx`, andaba en cualquier pantalla táctil) se reemplazó por
+  el componente común `src/componentes/TirarParaActualizar.tsx` (+ `tirarParaActualizarEstado.ts` y `.css`, copia de
+  `Proyectos/plantillas/tirar-para-actualizar/`), montado una vez en `main.tsx`: solo en la app instalada
+  (standalone) y táctil, desde arriba de todo, sin modal abierto. Recarga los datos de la pestaña visible
+  (`RecargaDePantalla.tsx`: Equipos y Alertas, que quedan montadas ocultas) o, si no hay, la página. En el navegador
+  del celular queda el gesto nativo.
 
 ## Pendientes conocidos
 

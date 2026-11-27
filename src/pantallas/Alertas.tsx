@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { showAlert } from '../componentes/AlertProvider';
 import { Icono } from '../componentes/iconos';
 import { TituloPestana } from '../componentes/navegacion';
-import { useTirarParaRefrescar } from '../componentes/TirarParaRefrescar';
+import { RecargaDePantalla } from '../componentes/RecargaDePantalla';
 import { AvisoError, BotonIcono, Desplazable, Spinner, Tocable, tarjeta } from '../componentes/ui';
 import { equiposConAlertasSinVer, formatFecha, infoTipo, listaDeAlertas, mapearAlertas, type Alerta } from '../lib/alertas';
 import { e, type Estilo } from '../lib/estilo';
@@ -40,15 +40,13 @@ function AlertaItem({ alerta, onMarcarVista }: { alerta: Alerta; onMarcarVista: 
 export default function Alertas() {
   const [alertas, setAlertas] = useState<Alerta[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Hora de la última actualización que salió bien (ESTANDARES D6); en ámbar si la última falló
   const [actualizado, setActualizado] = useState<number | null>(null);
 
   const cargarAlertas = useCallback(async (esRefresh = false) => {
     try {
-      if (esRefresh) setRefrescando(true);
-      else setCargando(true);
+      if (!esRefresh) setCargando(true);
       setError(null);
       // Alertas y equipos en paralelo, para mostrar el nombre de cada equipo
       const [data, equipos] = await Promise.all([alertaService.getAlertas(), equipoService.getMisEquipos()]);
@@ -58,13 +56,11 @@ export default function Alertas() {
       setError('No se pudieron cargar las alertas.');
     } finally {
       setCargando(false);
-      setRefrescando(false);
     }
   }, []);
 
   useEffect(() => { void cargarAlertas(); }, [cargarAlertas]);
 
-  const { ref, indicador } = useTirarParaRefrescar(() => cargarAlertas(true), refrescando);
 
   async function handleMarcarVista(id: number) {
     try {
@@ -116,7 +112,10 @@ export default function Alertas() {
         )}
         derecha={(
           <div style={e(s.botonesHeader)}>
-            <BotonIcono icono="actualizar" etiqueta="Actualizar" onPress={() => cargarAlertas(true)} fondo={C.card} borde={C.border} color={C.textSub} />
+            {/* En el celular no va: se actualiza tirando la pantalla hacia abajo (D6) */}
+            <div className="tpa-oculto-celular">
+              <BotonIcono icono="actualizar" etiqueta="Actualizar" onPress={() => cargarAlertas(true)} fondo={C.card} borde={C.border} color={C.textSub} />
+            </div>
             {cantNoVistas > 0 && (
               <Tocable estilo={s.marcarTodasBtn} onPress={handleMarcarTodas} opacidadActiva={0.6}>
                 <Icono nombre="check" tamano={16} />
@@ -129,7 +128,8 @@ export default function Alertas() {
 
       {error && <AvisoError texto={error} onReintentar={() => cargarAlertas()} />}
 
-      <Desplazable ref={ref} estiloContenido={[s.lista, s.listaAncha]} arriba={indicador}>
+      <RecargaDePantalla ruta="/alertas" recargar={() => cargarAlertas(true)} />
+      <Desplazable estiloContenido={[s.lista, s.listaAncha]}>
         {alertas.length === 0 ? (
           <div style={e(s.vacio)}>
             <div style={e(s.vacioIcono)}><Icono nombre="campanaApagada" tamano={28} /></div>

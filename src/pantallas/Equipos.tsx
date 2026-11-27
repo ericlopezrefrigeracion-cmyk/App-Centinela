@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { showAlert } from '../componentes/AlertProvider';
 import { Icono, IconoSenal } from '../componentes/iconos';
-import { useTirarParaRefrescar } from '../componentes/TirarParaRefrescar';
+import { RecargaDePantalla } from '../componentes/RecargaDePantalla';
 import { BotonTema } from '../componentes/SelectorTema';
 import { AvisoError, BotonIcono, Desplazable, Spinner, Tocable, tarjeta, useBreakpoint } from '../componentes/ui';
 import { useAuth } from '../contexto/AuthContext';
@@ -92,15 +92,13 @@ export default function Equipos() {
   const numColumns = esMobile ? 1 : esTablet ? 2 : 3;
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Hora de la última actualización que salió bien (ESTANDARES D6); en ámbar si la última falló
   const [actualizado, setActualizado] = useState<number | null>(null);
 
   const cargarEquipos = useCallback(async (esRefresh = false) => {
     try {
-      if (esRefresh) setRefrescando(true);
-      else setCargando(true);
+      if (!esRefresh) setCargando(true);
       setError(null);
       const data = await equipoService.getMisEquipos();
       setEquipos(prepararEquipos(data));
@@ -109,7 +107,6 @@ export default function Equipos() {
       setError('No se pudieron cargar los equipos. Revisá tu conexión.');
     } finally {
       setCargando(false);
-      setRefrescando(false);
     }
   }, []);
 
@@ -146,8 +143,6 @@ export default function Equipos() {
     };
   }, [cargarEquipos]);
 
-  const { ref, indicador } = useTirarParaRefrescar(() => cargarEquipos(true), refrescando);
-
   function handleLogout() {
     showAlert('Cerrar sesión', '¿Estás seguro?', [
       { text: 'Cancelar', style: 'cancel' },
@@ -181,15 +176,19 @@ export default function Equipos() {
           </span>
         </div>
         <div style={e(s.botonesHeader)}>
-          <BotonIcono icono="actualizar" etiqueta="Actualizar" onPress={() => cargarEquipos(true)} fondo={C.card} borde={C.border} color={C.textSub} />
-          <BotonTema />
+          {/* En el celular no van Actualizar (se tira la pantalla hacia abajo, D6) ni el tema (va en Perfil, G1) */}
+          <div className="tpa-oculto-celular" style={e(s.botonesHeader)}>
+            <BotonIcono icono="actualizar" etiqueta="Actualizar" onPress={() => cargarEquipos(true)} fondo={C.card} borde={C.border} color={C.textSub} />
+            <BotonTema />
+          </div>
           <BotonIcono icono="salir" etiqueta="Cerrar sesión" onPress={handleLogout} fondo={C.card} borde={C.border} color={C.textSub} />
         </div>
       </div>
 
       {error && <AvisoError texto={error} onReintentar={() => cargarEquipos()} />}
 
-      <Desplazable ref={ref} estiloContenido={[s.lista, s.listaAncha]} arriba={indicador}>
+      <RecargaDePantalla ruta="/" recargar={() => cargarEquipos(true)} />
+      <Desplazable estiloContenido={[s.lista, s.listaAncha]}>
         {equipos.length === 0 ? (
           <div style={e(s.vacio)}>
             <div style={e(s.vacioIcono)}><Icono nombre="termometro" tamano={28} /></div>

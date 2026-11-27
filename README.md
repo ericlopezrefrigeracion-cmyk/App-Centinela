@@ -61,7 +61,7 @@ Los PR (por ejemplo los de Dependabot) corren las mismas verificaciones sin desp
 Cumple los que corresponden a una web de clientes sin backend: B4 (los deploys hacen fila), B6 (`nginx -t` antes
 de usar la configuración nueva y vuelta atrás si falla), B7 (verificación en el dominio: versión, robots, noindex y
 cabeceras), B8 (Dependabot + `npm audit --omit=dev`), C2 (cabeceras de seguridad con CSP, en un snippet incluido en
-cada `location`), D6 (equipos y alertas con "Act. HH:MM" y "Actualizar"), D7 (aviso de versión nueva), E7 en lo que
+cada `location`), D6 (equipos y alertas con "Act. HH:MM" y "Actualizar", este solo en la computadora; en la app instalada, tirar para actualizar), D7 (aviso de versión nueva), E7 en lo que
 toca al navegador (formatos solo en `formato.ts`, con test guardián) y G1 a G4 (temas, íconos, reportes PDF y campos
 con ±).
 

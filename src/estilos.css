@@ -20,6 +20,13 @@
   --c-sombra: none;
   --c-velo: rgba(0, 0, 0, 0.6);
 
+  /* Tirar para actualizar (D6): toman los colores de cada modo por las variables de arriba */
+  --tpa-fondo: var(--c-tarjeta);
+  --tpa-texto: var(--c-texto-sub);
+  --tpa-listo: var(--c-marca);
+  --tpa-borde: var(--c-borde);
+  --tpa-sombra: rgba(0, 0, 0, 0.3);
+
   /* Textos */
   --c-texto: #f2f3f5;
   --c-texto-sub: #9ba1a8;

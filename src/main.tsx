@@ -5,6 +5,7 @@ import App from './App';
 import { AlertProvider } from './componentes/AlertProvider';
 import { AvisoVersion } from './componentes/AvisoVersion';
 import { ErrorBoundary } from './componentes/ErrorBoundary';
+import { TirarParaActualizar } from './componentes/TirarParaActualizar';
 import { AuthProvider } from './contexto/AuthContext';
 import { iniciarTema } from './lib/temaNavegador';
 import './estilos.css';
@@ -20,6 +21,8 @@ createRoot(document.getElementById('root')!).render(
           <BrowserRouter>
             <App />
             <AvisoVersion />
+            {/* Tirar para actualizar en la app instalada (D6); en el navegador queda el gesto nativo */}
+            <TirarParaActualizar />
           </BrowserRouter>
         </AuthProvider>
       </AlertProvider>
