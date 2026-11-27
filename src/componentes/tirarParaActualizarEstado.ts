@@ -49,8 +49,8 @@ export function debeActivarse(entorno: EntornoTirar): boolean {
 
 interface VentanaMinima {
   matchMedia?: (consulta: string) => { matches: boolean }
-  // `object` y no { standalone?: boolean }: con un tipo sin propiedades obligatorias, TS rechaza el Navigator real.
-  navigator?: object
+  // unknown: el Navigator real no encaja en un tipo con todo opcional (TS2345); standalone se lee abajo.
+  navigator?: unknown
 }
 
 export function leerEntorno(ventana: VentanaMinima): EntornoTirar {
